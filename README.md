@@ -2,43 +2,43 @@
 
 A collection of independent software projects documenting practical work in programming, debugging, automation, static analysis, data handling, and application development.
 
-This repository is intended as a general technical portfolio. It is not tailored to a particular university, employer, or application process. Project descriptions are kept factual: implemented behavior, requirements, test evidence, and known limitations should be stated separately.
+This repository is intended as a general technical portfolio. It is not tailored to a particular university, employer, or application process. The goal is to make the engineering work reviewable: source code, design decisions, setup instructions, tests, known limitations, and build evidence should be available wherever the project supports them.
 
 ## Project index
 
-| Project | Area |
-|---|---|
-| 3D-Model-Loader | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls |
-| Crash-Lag-Monitor | Crash Guard — performance monitoring and log diagnostics |
-| Lua-Code-Checker | Static checks and conservative automatic fixes for Lua |
-| Coordinate-Lookup-Tool | Position lookup and handling of protected multi-value returns |
-| Network-Session-Recorder | Session capture, binary storage, and playback |
-| Scoreboard-GIF-Decoder | Scoreboard interface and GIF/LZW decoding |
-| Threaded-AI-Chat-API | Non-blocking AI API requests from a cooperative scripting host |
-| Lua-Malware-Scanner | Aegis — static analysis of Lua files and safe-copy sanitization |
+| Project | Area | Repository status |
+|---|---|---|
+| 3D-Model-Loader | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls | Not published here yet |
+| Crash-Lag-Monitor | Crash Guard — performance monitoring and log diagnostics | Not published here yet |
+| Lua-Code-Checker | Static checks and conservative automatic fixes for Lua | Not published here yet |
+| Coordinate-Lookup-Tool | Position lookup and handling of protected multi-value returns | Not published here yet |
+| Network-Session-Recorder | Session capture, binary storage, and playback | Not published here yet |
+| Scoreboard-GIF-Decoder | Scoreboard interface and GIF/LZW decoding | Not published here yet |
+| Threaded-AI-Chat-API | Non-blocking AI API requests from a cooperative scripting host | Not published here yet |
+| [Lua-Malware-Scanner — Aegis](Lua-Malware-Scanner/README.md) | Static analysis of Lua scripts, evidence-based findings, deobfuscation, and safe-copy sanitization | Source published; Windows build validation in progress |
 
-## Repository status
+The project descriptions above are an index of the work intended for this portfolio. A project is not considered submitted or reviewable until its source is present and its own documentation explains what is actually implemented.
 
-The project index describes the intended portfolio structure; it must not be read as proof that every project has already been published in this repository.
+## Current repository contents
 
-At the current revision, the repository contains the portfolio overview, the Aegis source archive, and initial Aegis build/bootstrap files. The complete Aegis source restoration is being validated through GitHub Actions. The other seven project source directories have not yet been published here.
+Aegis v0.8.2 is the first complete project source tree published in this repository. It includes the Python package, command-line and GUI entry points, analysis rules, sample Lua files, and a dedicated test suite. Its Windows packaging workflow is configured to run the tests and build a standalone application. The current build result and any downloadable artifact must be checked in the [GitHub Actions history](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions); the presence of a workflow does not by itself mean that a tested executable has been released.
 
-Build status and test results will only be described as successful after the corresponding workflow or test run completes successfully. A source archive, a successful static check, and a tested executable are different deliverables and will be identified separately.
+The other seven projects are not yet published in this repository. They will be added as separate project directories after their source files have been reviewed and their documentation can be tied to the actual implementation. Their appearance in the index is not evidence that their source is already available here.
 
-## Documentation and evidence standard
+## How to review a project
 
-Each project README should cover, where applicable:
+Each project README should make it possible to understand the work without relying on a verbal explanation. Depending on the project, it should cover:
 
-- Problem statement and intended use.
-- Implemented features, tied to source code.
-- Architecture and important design choices.
-- Runtime, dependencies, and setup instructions.
-- Reproducible test commands and actual test results.
+- The problem being addressed and the intended use.
+- Implemented behavior, with pointers to the relevant source modules.
+- Architecture, data flow, and important design decisions.
+- Runtime requirements, dependencies, installation, and usage.
+- Tests that can be repeated, with actual results rather than estimates.
 - Known limitations, unsupported cases, and security considerations.
 - Build and release status, distinguishing source availability from tested binaries.
 
-The portfolio avoids unsupported performance claims, inflated descriptions, and claims of production readiness without evidence. Where something has not been tested, that fact should be stated directly.
+## Engineering and evidence standard
 
-## Compatibility note
+The portfolio avoids unsupported performance claims, inflated feature descriptions, and claims of production readiness without evidence. Test results must identify the test set and environment; benchmark results must not be presented as universal real-world accuracy. Optional integrations must be identified as optional, and anything that has not been tested against a live service should be described accordingly.
 
 The projects target different runtimes and environments. For example, MoonLoader scripts require a compatible GTA: San Andreas multiplayer client and supporting components. Aegis and Lua Code Checker are separate tools with their own runtime requirements.
