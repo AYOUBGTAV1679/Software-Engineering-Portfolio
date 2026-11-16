@@ -1,36 +1,44 @@
 # Software Engineering Portfolio
 
-A collection of independent software projects demonstrating practical problem-solving, programming, debugging, and software design across several environments and technologies.
+A collection of independent software projects documenting practical work in programming, debugging, automation, static analysis, data handling, and application development.
 
-The portfolio covers a range of engineering areas, including static code analysis, diagnostic tooling, binary data processing, session recording and playback, API integration, and game scripting. Each project is presented on its own merits, with documentation focused on its purpose, implementation, technical decisions, requirements, and known limitations.
+This repository is intended as a general technical portfolio. It is not tailored to a particular university, employer, or application process. Project descriptions are kept factual: implemented behavior, requirements, test evidence, and known limitations should be stated separately.
 
-## Projects
+## Project index
 
-| Project | Focus |
+| Project | Area |
 |---|---|
-| **3D-Model-Loader** | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls |
-| **Crash-Lag-Monitor** | Crash Guard — adaptive performance monitoring and log diagnostics |
-| **Lua-Code-Checker** | Lua static checks and conservative automatic fixes |
-| **Coordinate-Lookup-Tool** | Position lookup and correct handling of protected multi-value returns |
-| **Network-Session-Recorder** | Session capture, binary storage, and reversible playback |
-| **Scoreboard-GIF-Decoder** | Live scoreboard UI and a custom GIF/LZW decoder |
-| **Threaded-AI-Chat-API** | Non-blocking AI API requests from a cooperative scripting host |
-| **Lua-Malware-Scanner** | Aegis — evidence-based static analysis and safe-copy sanitization |
+| [3D-Model-Loader](3D-Model-Loader/) | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls |
+| [Crash-Lag-Monitor](Crash-Lag-Monitor/) | Crash Guard — performance monitoring and log diagnostics |
+| [Lua-Code-Checker](Lua-Code-Checker/) | Static checks and conservative automatic fixes for Lua |
+| [Coordinate-Lookup-Tool](Coordinate-Lookup-Tool/) | Position lookup and handling of protected multi-value returns |
+| [Network-Session-Recorder](Network-Session-Recorder/) | Session capture, binary storage, and playback |
+| [Scoreboard-GIF-Decoder](Scoreboard-GIF-Decoder/) | Scoreboard interface and GIF/LZW decoding |
+| [Threaded-AI-Chat-API](Threaded-AI-Chat-API/) | Non-blocking AI API requests from a cooperative scripting host |
+| [Lua-Malware-Scanner](Lua-Malware-Scanner/) | Aegis — static analysis of Lua files and safe-copy sanitization |
 
-## Exploring the projects
+## Repository status
 
-Start with the README for the project you are interested in. Project documentation is intended to explain:
+The project index describes the intended portfolio structure; it must not be read as proof that every project has already been published in this repository.
 
-- The problem the project addresses.
-- The functionality implemented in the source code.
-- The structure and important engineering decisions.
-- Setup, dependencies, and usage requirements.
-- Testing information and known limitations.
+At the current revision, the repository contains the portfolio overview, the Aegis source archive, and initial Aegis build/bootstrap files. The complete Aegis source restoration is being validated through GitHub Actions. The other seven project source directories have not yet been published here.
 
-The projects target different runtimes and environments. For example, the MoonLoader scripts require a compatible GTA: San Andreas multiplayer client and supporting components. Aegis and Lua Code Checker are separate tools with their own runtime requirements.
+Build status and test results will only be described as successful after the corresponding workflow or test run completes successfully. A source archive, a successful static check, and a tested executable are different deliverables and will be identified separately.
 
-## Engineering approach
+## Documentation and evidence standard
 
-The portfolio emphasizes clear explanations and verifiable implementation details over promotional claims. Documentation distinguishes implemented behavior from planned work, avoids implying capabilities that are not established by the source, and records relevant limitations so that each project can be evaluated accurately.
+Each project README should cover, where applicable:
 
-This portfolio is intended as a general presentation of software projects and development experience. It is not tailored to a particular university, employer, or application process.
+- Problem statement and intended use.
+- Implemented features, tied to source code.
+- Architecture and important design choices.
+- Runtime, dependencies, and setup instructions.
+- Reproducible test commands and actual test results.
+- Known limitations, unsupported cases, and security considerations.
+- Build and release status, distinguishing source availability from tested binaries.
+
+The portfolio avoids unsupported performance claims, inflated descriptions, and claims of production readiness without evidence. Where something has not been tested, that fact should be stated directly.
+
+## Compatibility note
+
+The projects target different runtimes and environments. For example, MoonLoader scripts require a compatible GTA: San Andreas multiplayer client and supporting components. Aegis and Lua Code Checker are separate tools with their own runtime requirements.
