@@ -8,14 +8,14 @@ This repository is intended as a general technical portfolio. It is not tailored
 
 | Project | Area |
 |---|---|
-| [3D-Model-Loader](3D-Model-Loader/) | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls |
-| [Crash-Lag-Monitor](Crash-Lag-Monitor/) | Crash Guard — performance monitoring and log diagnostics |
-| [Lua-Code-Checker](Lua-Code-Checker/) | Static checks and conservative automatic fixes for Lua |
-| [Coordinate-Lookup-Tool](Coordinate-Lookup-Tool/) | Position lookup and handling of protected multi-value returns |
-| [Network-Session-Recorder](Network-Session-Recorder/) | Session capture, binary storage, and playback |
-| [Scoreboard-GIF-Decoder](Scoreboard-GIF-Decoder/) | Scoreboard interface and GIF/LZW decoding |
-| [Threaded-AI-Chat-API](Threaded-AI-Chat-API/) | Non-blocking AI API requests from a cooperative scripting host |
-| [Lua-Malware-Scanner](Lua-Malware-Scanner/) | Aegis — static analysis of Lua files and safe-copy sanitization |
+| 3D-Model-Loader | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls |
+| Crash-Lag-Monitor | Crash Guard — performance monitoring and log diagnostics |
+| Lua-Code-Checker | Static checks and conservative automatic fixes for Lua |
+| Coordinate-Lookup-Tool | Position lookup and handling of protected multi-value returns |
+| Network-Session-Recorder | Session capture, binary storage, and playback |
+| Scoreboard-GIF-Decoder | Scoreboard interface and GIF/LZW decoding |
+| Threaded-AI-Chat-API | Non-blocking AI API requests from a cooperative scripting host |
+| Lua-Malware-Scanner | Aegis — static analysis of Lua files and safe-copy sanitization |
 
 ## Repository status
 
