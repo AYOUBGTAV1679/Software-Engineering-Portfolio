@@ -1,0 +1,41 @@
+name: Build Aegis for Windows
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Lua-Malware-Scanner/**'
+      - '.github/workflows/build-aegis-windows.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Lua-Malware-Scanner
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: 'x64'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pyinstaller pytest
+      - name: Run test suite
+        run: python -m pytest -q
+      - name: Build standalone Windows application
+        run: ./build_windows.ps1
+        shell: pwsh
+      - name: Package application folder
+        run: Compress-Archive -Path dist/Aegis -DestinationPath ../Aegis-Windows-x64.zip -Force
+        shell: pwsh
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aegis-Windows-x64
+          path: Aegis-Windows-x64.zip
+          if-no-files-found: error
