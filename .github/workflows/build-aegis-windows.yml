@@ -6,7 +6,6 @@ on:
     paths:
       - 'Lua-Malware-Scanner/**'
       - 'Aegis-source-v0.8.2-restored.zip'
-      - '.github/workflows/build-aegis-windows.yml'
 
 permissions:
   contents: write
