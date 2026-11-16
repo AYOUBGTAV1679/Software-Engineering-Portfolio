@@ -5,34 +5,91 @@ on:
   push:
     paths:
       - 'Lua-Malware-Scanner/**'
+      - 'Aegis-source-v0.8.2-restored.zip'
       - '.github/workflows/build-aegis-windows.yml'
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: windows-latest
     defaults:
       run:
+        shell: pwsh
         working-directory: Lua-Malware-Scanner
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Restore the complete Aegis source (first-time bootstrap)
+        run: |
+          if (-not (Test-Path "requirements.txt")) {
+            $archive = Join-Path $env:GITHUB_WORKSPACE "Aegis-source-v0.8.2-restored.zip"
+            if (-not (Test-Path $archive)) {
+              throw "Full Aegis source is missing. Upload Aegis-source-v0.8.2-restored.zip to the repository root."
+            }
+
+            $expectedHash = "2215dcf821d955d198eae654e08b7aff7c477d5d5177bbb613cc47576b81663b"
+            $actualHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actualHash -ne $expectedHash) {
+              throw "Source archive SHA-256 mismatch. Expected $expectedHash; got $actualHash."
+            }
+
+            $restoreRoot = Join-Path $env:RUNNER_TEMP "aegis-source-restore"
+            if (Test-Path $restoreRoot) {
+              Remove-Item -LiteralPath $restoreRoot -Recurse -Force
+            }
+            New-Item -ItemType Directory -Path $restoreRoot | Out-Null
+            Expand-Archive -LiteralPath $archive -DestinationPath $restoreRoot -Force
+
+            $sourceRoot = Join-Path $restoreRoot "Lua-Malware-Scanner"
+            if (-not (Test-Path (Join-Path $sourceRoot "requirements.txt"))) {
+              throw "The archive does not contain the expected Aegis project structure."
+            }
+
+            Get-ChildItem -LiteralPath $sourceRoot -Force | Copy-Item -Destination "." -Recurse -Force
+          }
+
+          if (-not (Test-Path "requirements.txt")) {
+            throw "Aegis requirements.txt is still missing after source restoration."
+          }
+          Write-Host "Aegis source tree is present."
+
+      - name: Commit restored source tree to the portfolio repository
+        run: |
+          $repoRoot = $env:GITHUB_WORKSPACE
+          git -C $repoRoot config user.name "github-actions[bot]"
+          git -C $repoRoot config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C $repoRoot add -- Lua-Malware-Scanner
+          $pending = git -C $repoRoot status --porcelain -- Lua-Malware-Scanner
+          if ($pending) {
+            git -C $repoRoot commit -m "Restore complete Aegis v0.8.2 source tree"
+            git -C $repoRoot push
+          } else {
+            Write-Host "The complete Aegis source tree is already committed."
+          }
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           architecture: 'x64'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt pyinstaller pytest
+
       - name: Run test suite
         run: python -m pytest -q
+
       - name: Build standalone Windows application
         run: ./build_windows.ps1
-        shell: pwsh
+
       - name: Package application folder
         run: Compress-Archive -Path dist/Aegis -DestinationPath ../Aegis-Windows-x64.zip -Force
-        shell: pwsh
+
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
         with:
