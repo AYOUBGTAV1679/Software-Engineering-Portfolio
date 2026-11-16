@@ -76,7 +76,12 @@ jobs:
           $pending = git -C $repoRoot status --porcelain -- Lua-Malware-Scanner
           if ($pending) {
             git -C $repoRoot commit -m "Restore complete Aegis v0.8.2 source tree"
-            git -C $repoRoot push
+
+            # Another portfolio edit may land while this build is running.
+            # Rebase the restored source commit onto the latest main before pushing.
+            git -C $repoRoot fetch origin main
+            git -C $repoRoot rebase FETCH_HEAD
+            git -C $repoRoot push origin HEAD:main
           } else {
             Write-Host "The complete Aegis source tree is already committed."
           }
