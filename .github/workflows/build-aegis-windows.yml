@@ -56,6 +56,17 @@ jobs:
           }
           Write-Host "Aegis source tree is present."
 
+      - name: Sanitize credential-like synthetic test fixture
+        run: |
+          $fixture = Join-Path $env:GITHUB_WORKSPACE "Lua-Malware-Scanner/samples/synthetic_threats/16_discord_token.lua"
+          if (Test-Path $fixture) {
+            $lines = Get-Content -LiteralPath $fixture
+            if ($lines.Count -ge 3) {
+              $lines[2] = 'local token = "DISCORD_TOKEN_PLACEHOLDER_NOT_REAL"'
+              Set-Content -LiteralPath $fixture -Value $lines -Encoding utf8
+            }
+          }
+
       - name: Commit restored source tree to the portfolio repository
         run: |
           $repoRoot = $env:GITHUB_WORKSPACE
