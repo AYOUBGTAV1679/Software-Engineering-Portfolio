@@ -14,6 +14,10 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      # Aegis writes Unicode reports (including Arabic and Russian). Keep Python's
+      # default text encoding UTF-8 on Windows, too.
+      PYTHONUTF8: '1'
     defaults:
       run:
         shell: pwsh
@@ -58,11 +62,14 @@ jobs:
 
       - name: Sanitize credential-like synthetic test fixture
         run: |
+          # The sample is written using safe fragments in source. Keep any legacy
+          # archive copy in the same harmless, non-secret form before publishing.
           $fixture = Join-Path $env:GITHUB_WORKSPACE "Lua-Malware-Scanner/samples/synthetic_threats/16_discord_token.lua"
           if (Test-Path $fixture) {
             $lines = Get-Content -LiteralPath $fixture
             if ($lines.Count -ge 3) {
-              $lines[2] = 'local token = "DISCORD_TOKEN_PLACEHOLDER_NOT_REAL"'
+              $lines[2] = 'local token = "M" .. "AAAAAAAAAAAAAAAAAAAAAAA" .. "." .. "ABC123" .. "." .. "xxxxxxxxxxxxxxxxxxxxxxxxxxx"'
+              $lines[3] = 'print(token)'
               Set-Content -LiteralPath $fixture -Value $lines -Encoding utf8
             }
           }
