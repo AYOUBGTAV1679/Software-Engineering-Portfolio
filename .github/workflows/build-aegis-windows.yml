@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - 'Lua-Malware-Scanner/**'
-      - 'Aegis-source-v0.8.2-restored.zip'
+      - 'Aegis-source-v0.8.2.zip'
 
 permissions:
   contents: write
@@ -24,9 +24,9 @@ jobs:
       - name: Restore the complete Aegis source (first-time bootstrap)
         run: |
           if (-not (Test-Path "requirements.txt")) {
-            $archive = Join-Path $env:GITHUB_WORKSPACE "Aegis-source-v0.8.2-restored.zip"
+            $archive = Join-Path $env:GITHUB_WORKSPACE "Aegis-source-v0.8.2.zip"
             if (-not (Test-Path $archive)) {
-              throw "Full Aegis source is missing. Upload Aegis-source-v0.8.2-restored.zip to the repository root."
+              throw "Full Aegis source is missing. Upload Aegis-source-v0.8.2.zip to the repository root."
             }
 
             $expectedHash = "2215dcf821d955d198eae654e08b7aff7c477d5d5177bbb613cc47576b81663b"
