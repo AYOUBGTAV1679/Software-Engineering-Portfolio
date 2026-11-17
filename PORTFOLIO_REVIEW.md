@@ -79,3 +79,11 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Added validation for GIF LZW minimum code size, missing color tables, truncated global/local palettes, truncated image sub-blocks, and invalid image descriptors.
 - Added an aggregate decoded-frame pixel budget in addition to logical-screen and per-image dimension checks. The README documents that this bounds allocations but may reject long animations.
 - The changes have not yet been exercised against a generated GIF regression corpus or the target host's texture-loading path. CI syntax validation is not a substitute for GIF conformance tests.
+
+
+## Threaded AI Chat API timeout and worker error audit
+
+- Replaced os.clock deadlines in both HTTP-result polling loops. That function measures process CPU time, so it is unsuitable for elapsed request deadlines in a cooperative script that yields frequently. The code now uses the host game timer in milliseconds, with a seconds-resolution os.time fallback when the host timer is unavailable.
+- Moved the requests module load inside the worker's protected call. A missing HTTP dependency now travels back as an error result instead of terminating the lane without notifying its caller.
+- Protected Linda/channel and worker creation. Setup failures are placed into the request result queue so the UI can surface an actionable error.
+- This does not forcibly cancel a running HTTP call after its deadline, and no live provider request has been verified. The script still requires real credentials and the documented host dependencies.

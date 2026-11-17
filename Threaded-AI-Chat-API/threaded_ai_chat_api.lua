@@ -58,6 +58,16 @@ local MODEL     = MODELS[1]
 local model_idx = 1
 local TIMEOUT = 15
 
+-- os.clock() measures process CPU time, not elapsed wall time. Use the host's
+-- monotonic game timer for request deadlines, with a seconds-resolution fallback.
+local function NowMilliseconds()
+    if type(getGameTimer) == "function" then
+        local ok, value = pcall(getGameTimer)
+        if ok and type(value) == "number" then return value end
+    end
+    return os.time() * 1000
+end
+
 --------------------------------------------------------------------------------
 -- PATHS
 --------------------------------------------------------------------------------
@@ -479,15 +489,12 @@ local function DoHttpRequest(cmd, mode, text, request_id)
 
     local sys    = GetSys(cmd)
     local prompt = BuildPrompt(text)
-
     local body = string.format(
         '{"model":"%s","max_tokens":400,"temperature":0.7,"messages":[{"role":"system","content":"%s"},{"role":"user","content":"%s"}]}',
         MODEL, JE(sys), JE(prompt)
     )
 
-    -- Resolve the provider at request creation time. Keeping the endpoint and
-    -- credential together prevents the UI provider toggle from changing only
-    -- the model name while requests continue going to the previous service.
+    -- Resolve the provider at request creation time. Keep endpoint and key paired.
     local api_key = USE_OR and API_KEY_OR or API_KEY
     local api_url = USE_OR
         and "https://openrouter.ai/api/v1/chat/completions"
@@ -495,49 +502,56 @@ local function DoHttpRequest(cmd, mode, text, request_id)
     local pkg_path  = package.path
     local pkg_cpath = package.cpath
 
-    -- linda: thread-safe channel for passing result back
-    local linda = lanes.linda()
-
-    local worker = lanes.gen("*", {
-        package = { path = pkg_path, cpath = pkg_cpath }
-    }, function(ld, bdy, key, url)
-        local requests = require("requests")
-        local ok, res = pcall(function()
-            return requests.post(
-                url,
-                {
-                    headers = {
-                        ["Content-Type"]  = "application/json",
-                        ["Authorization"] = "Bearer " .. key,
-                    },
-                    data = bdy,
-                }
-            )
+    local setupOk, setupError = pcall(function()
+        local linda = lanes.linda()
+        local worker = lanes.gen("*", {
+            package = { path = pkg_path, cpath = pkg_cpath }
+        }, function(ld, bdy, key, url)
+            -- Keep dependency loading inside pcall too: a missing requests
+            -- module must report an error instead of silently killing the lane.
+            local ok, res = pcall(function()
+                local requests = require("requests")
+                return requests.post(
+                    url,
+                    {
+                        headers = {
+                            ["Content-Type"]  = "application/json",
+                            ["Authorization"] = "Bearer " .. key,
+                        },
+                        data = bdy,
+                    }
+                )
+            end)
+            if ok then
+                local responseText = type(res) == "table" and res.text or ""
+                ld:send("result", tostring(responseText or ""))
+            else
+                ld:send("result", "ERROR:" .. tostring(res))
+            end
         end)
-        if ok then
-            ld:send("result", res.text or "")
-        else
-            ld:send("result", "ERROR:" .. tostring(res))
-        end
+
+        worker(linda, body, api_key, api_url)
+
+        lua_thread.create(function()
+            local startedAt = NowMilliseconds()
+            while true do
+                local key, val = linda:receive(0, "result")
+                if key == "result" then
+                    http_queue[request_id] = { text = tostring(val or "") }
+                    return
+                end
+                if NowMilliseconds() - startedAt >= TIMEOUT * 1000 then
+                    http_queue[request_id] = { err = "Timeout" }
+                    return
+                end
+                wait(0)
+            end
+        end)
     end)
 
-    worker(linda, body, api_key, api_url)
-
-    lua_thread.create(function()
-        local deadline = os.clock() + TIMEOUT
-        while true do
-            local key, val = linda:receive(0, "result")
-            if key == "result" then
-                http_queue[request_id] = { text = tostring(val or "") }
-                return
-            end
-            if os.clock() > deadline then
-                http_queue[request_id] = { err = "Timeout" }
-                return
-            end
-            wait(0)
-        end
-    end)
+    if not setupOk then
+        http_queue[request_id] = { err = "Could not start HTTP worker: " .. tostring(setupError) }
+    end
 end
 
 local req_id = 0
@@ -603,7 +617,7 @@ local function SendRequest(cmd, mode, text, on_done, on_err)
     DoHttpRequest(cmd, mode, text, id)
 
     lua_thread.create(function()
-        local deadline = os.clock() + TIMEOUT + 2
+        local startedAt = NowMilliseconds()
         while true do
             if http_queue[id] then
                 local r = http_queue[id]
@@ -626,7 +640,7 @@ local function SendRequest(cmd, mode, text, on_done, on_err)
                 end
                 return
             end
-            if os.clock() > deadline then
+            if NowMilliseconds() - startedAt >= (TIMEOUT + 2) * 1000 then
                 http_queue[id] = nil
                 if on_err then on_err("Timeout") end
                 return
