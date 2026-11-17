@@ -120,7 +120,11 @@ function M.tokenize(source)
                 local ch = source:sub(j, j)
                 buf[#buf + 1] = ch
                 if ch == "\\" and j + 1 <= n then
-                    buf[#buf + 1] = source:sub(j + 1, j + 1)
+                    local escaped = source:sub(j + 1, j + 1)
+                    buf[#buf + 1] = escaped
+                    if escaped == "\n" then
+                        line = line + 1
+                    end
                     j = j + 2
                     goto innercontinue
                 end

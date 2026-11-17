@@ -33,3 +33,7 @@ require("samp.events")
 
 -- OK: known-safe require
 require("moonloader")
+
+-- Bug 6: an unrelated known name in a later namespace segment must not
+-- make an unknown top-level module look trusted.
+require("custom.moonloader.untrusted")

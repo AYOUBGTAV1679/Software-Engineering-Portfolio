@@ -13,7 +13,8 @@
 -- regression test.
 --------------------------------------------------------------
 
-local scriptDir = (arg and arg[0] and arg[0]:match("(.*/)")) or "./"
+-- Keep module loading reliable when invoked with either Unix or Windows paths.
+local scriptDir = (arg and arg[0] and arg[0]:match("^(.*[/\\\\])")) or "./"
 package.path = scriptDir .. "?.lua;" .. scriptDir .. "?/init.lua;" .. package.path
 
 local tokenizer = require("tokenizer")

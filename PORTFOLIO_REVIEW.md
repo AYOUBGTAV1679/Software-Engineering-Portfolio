@@ -48,3 +48,10 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Replaced `os.clock()` for frame timing and periodic intervals with the host's `getGameTimer()`. Lua's `os.clock()` measures process CPU time; it is not a reliable wall-clock source for frame-to-frame intervals across calls to `wait(0)`.
 - Updated command/UI messaging and the README to state the actual scan radius. The script now reports when the vehicle scan API is unavailable rather than presenting an empty result as zero vehicles.
 - These changes are source-level corrections. They need MoonLoader runtime validation, especially the iterator behavior and its returned vehicle handles, before they can be considered verified in the target host.
+
+## Lua Code Checker follow-up regression fixes
+
+- Tightened `unverified-require` so the allowlist matches only the first module namespace segment. A trusted word appearing later in a dotted module name no longer suppresses a finding for an unknown root module.
+- Corrected tokenizer line tracking when a short string contains an escaped newline.
+- Made command-line module lookup accept both Unix and Windows path separators when the checker is invoked through a path.
+- Extended the intentional fixture to cover a misleading nested module name and added focused Lua regression tests. CI now checks **15 Lua files**, the expected fixture summary (**3 errors, 3 warnings, 0 info**), and the focused regression assertions.

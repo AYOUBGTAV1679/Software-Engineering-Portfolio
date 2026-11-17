@@ -35,14 +35,11 @@ function M.check(tokens, filename)
             end
             if j <= n and tokens[j].type == "string" then
                 local raw = stripQuotes(tokens[j].value)
-                local anySafe = false
-                for seg in (raw .. "."):gmatch("([^.]*)%.") do
-                    if KNOWN_SAFE[seg:lower()] then
-                        anySafe = true
-                        break
-                    end
-                end
-                if not anySafe then
+                -- Trust only a known top-level module namespace. A known word
+                -- in a later segment must not make an unrelated root module safe.
+                local rootModule = raw:match("^([%w_]+)")
+                local rootIsSafe = rootModule ~= nil and KNOWN_SAFE[rootModule] == true
+                if not rootIsSafe then
                     findings[#findings + 1] = {
                         file = filename,
                         line = tok.line,

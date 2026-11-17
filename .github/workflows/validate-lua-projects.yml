@@ -54,8 +54,8 @@ jobs:
               -type f -name '*.lua' -print0 | sort -z
           )
 
-          if [ "${#lua_files[@]}" -ne 14 ]; then
-            printf 'Expected 14 Lua files, found %s\n' "${#lua_files[@]}"
+          if [ "${#lua_files[@]}" -ne 15 ]; then
+            printf 'Expected 15 Lua files, found %s\n' "${#lua_files[@]}"
             exit 1
           fi
 
@@ -80,4 +80,7 @@ jobs:
             exit 1
           fi
 
-          grep -F 'Scanned 1 file(s): 3 error(s), 2 warning(s), 0 info.' <<< "$output"
+          grep -F 'Scanned 1 file(s): 3 error(s), 3 warning(s), 0 info.' <<< "$output"
+
+      - name: Run Lua Code Checker regression tests
+        run: lua5.4 Lua-Code-Checker/tests/test_checker_regressions.lua
