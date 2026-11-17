@@ -113,6 +113,7 @@ local font_loaded = false
 
 -- HTTP result queue: lanes thread puts result here, main thread reads it
 local http_queue = {}
+local http_lanes = {} -- active worker handles, keyed by request ID
 
 --------------------------------------------------------------------------------
 -- WINDOWS
@@ -530,17 +531,24 @@ local function DoHttpRequest(cmd, mode, text, request_id)
             end
         end)
 
-        worker(linda, body, api_key, api_url)
+        -- Retain the lane handle so a deadline can request cancellation.
+        http_lanes[request_id] = worker(linda, body, api_key, api_url)
 
         lua_thread.create(function()
             local startedAt = NowMilliseconds()
             while true do
                 local key, val = linda:receive(0, "result")
                 if key == "result" then
+                    http_lanes[request_id] = nil
                     http_queue[request_id] = { text = tostring(val or "") }
                     return
                 end
                 if NowMilliseconds() - startedAt >= TIMEOUT * 1000 then
+                    local lane = http_lanes[request_id]
+                    http_lanes[request_id] = nil
+                    -- Cancellation is cooperative; do not force-kill a worker
+                    -- that may be inside a native call or holding native resources.
+                    if lane then pcall(function() lane:cancel("hard", 0) end) end
                     http_queue[request_id] = { err = "Timeout" }
                     return
                 end
@@ -550,6 +558,7 @@ local function DoHttpRequest(cmd, mode, text, request_id)
     end)
 
     if not setupOk then
+        http_lanes[request_id] = nil
         http_queue[request_id] = { err = "Could not start HTTP worker: " .. tostring(setupError) }
     end
 end

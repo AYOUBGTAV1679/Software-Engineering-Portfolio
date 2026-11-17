@@ -11,8 +11,9 @@ The script provides a live leaderboard, sorting and filtering controls, session 
 The Lua decoder handles:
 
 - GIF headers and logical screen descriptors.
-- Global and local color tables.
-- Graphic control extensions and image descriptors.
+- Global and local color tables, with bounds checks for truncated palette data.
+- Graphic control extensions and image descriptors, including validation of control-block size, terminators, and extension sub-block boundaries.
+- GIF87a/GIF89a signature validation and a required trailer marker; unknown block markers and incomplete files are rejected.
 - LZW decompression with variable-width codes from 2 to 12 bits. Invalid or truncated code streams are rejected, and decoded output is capped at the image's declared pixel count.
 - Clear and end-of-information codes and dictionary growth.
 - Frame transparency, composition, and disposal handling.

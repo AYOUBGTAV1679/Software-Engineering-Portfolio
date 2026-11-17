@@ -110,3 +110,16 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Workflow run [#44116518796](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44116518796) completed successfully on the current source commit before this documentation-only refresh.
 - The workflow parsed all 15 tracked Lua source/test files with Lua 5.4, checked the fixture's expected **3 errors, 3 warnings, 0 info** output, and ran the Lua Code Checker regression tests.
 - The run confirms Lua syntax and these focused regression assertions. It does not exercise the MoonLoader runtime, decode a generated GIF corpus, compile the FFmpeg bridge, or make a live provider request.
+
+
+## GIF decoder malformed-input handling
+
+- Tightened container validation to accept only GIF87a/GIF89a signatures, validate Graphic Control Extension size and terminator, bounds-check generic extension sub-blocks, reject unknown block markers, and require the GIF trailer before returning decoded frames.
+- The LZW decoder rejects invalid dictionary references, truncated streams, and output that does not exactly match the frame descriptor. The aggregate decoded-screen pixel budget remains in place.
+- No generated fixture corpus or target-host texture integration test has been run. These changes are source-level defensive checks and remain subject to decoder conformance testing.
+
+## Threaded AI request worker lifecycle
+
+- Retained the lane handle for each active HTTP request. When the request deadline expires, the polling coroutine now requests hard lane cancellation and reports the timeout rather than silently abandoning the worker.
+- The implementation deliberately does not force-kill a worker. Lua Lanes cancellation is cooperative; a worker blocked inside a native/network call may not process cancellation until control returns to Lua. This limitation is documented.
+- Provider routing and API-key selection remain paired at request creation. No live provider request has been made as part of this source review.

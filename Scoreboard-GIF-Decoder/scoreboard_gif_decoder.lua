@@ -508,7 +508,7 @@ local function gifDecodeFile(path)
 	if not f then return nil, "cannot open file" end
 	local data = f:read("*a")
 	f:close()
-	if not data or #data < 13 or data:sub(1, 3) ~= "GIF" then
+	if not data or #data < 13 or (data:sub(1, 6) ~= "GIF87a" and data:sub(1, 6) ~= "GIF89a") then
 		return nil, "not a valid gif file"
 	end
 
@@ -543,6 +543,7 @@ local function gifDecodeFile(path)
 	local prevSnapshot = nil
 	local dataLen = #data
 	local safety = 0
+	local sawTrailer = false
 	local totalFramePixels = 0
 	local MAX_TOTAL_FRAME_PIXELS = 4000000
 
@@ -552,19 +553,31 @@ local function gifDecodeFile(path)
 		if blockType == 0x21 then
 			local label = u8b(data, pos); pos = pos + 1
 			if label == 0xF9 then
-				pos = pos + 1 -- block size (always 4)
+				local blockSize = u8b(data, pos); pos = pos + 1
+				if blockSize ~= 4 or pos + 4 > dataLen then
+					return nil, "invalid or truncated graphic control extension"
+				end
 				local gcPacked = u8b(data, pos); pos = pos + 1
 				gcDisposal = band(rshift(gcPacked, 2), 0x07)
 				local transpFlag = band(gcPacked, 0x01)
 				gcDelay = u16le(data, pos); pos = pos + 2
 				local transIdx = u8b(data, pos); pos = pos + 1
 				gcTransparentIndex = (transpFlag == 1) and transIdx or nil
-				pos = pos + 1 -- terminator
+				if u8b(data, pos) ~= 0 then
+					return nil, "invalid graphic control extension terminator"
+				end
+				pos = pos + 1
 			else
 				local sub = u8b(data, pos); pos = pos + 1
-				while sub and sub > 0 do
+				if not sub then return nil, "truncated extension data" end
+				while sub > 0 do
+					if pos + sub - 1 > dataLen then
+						return nil, "truncated extension sub-block"
+					end
 					pos = pos + sub
-					sub = u8b(data, pos); pos = pos + 1
+					sub = u8b(data, pos)
+					if not sub then return nil, "missing extension terminator" end
+					pos = pos + 1
 				end
 			end
 		elseif blockType == 0x2C then
@@ -665,12 +678,16 @@ local function gifDecodeFile(path)
 			end
 			gcDelay, gcTransparentIndex, gcDisposal = 10, nil, 0
 		elseif blockType == 0x3B then
+			sawTrailer = true
 			break
 		else
-			break
+			return nil, "unknown GIF block marker"
 		end
 	end
 
+	if not sawTrailer then
+		return nil, "missing GIF trailer or parser safety limit reached"
+	end
 	if #frames == 0 then
 		return nil, "no frames found"
 	end
