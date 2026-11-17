@@ -89,8 +89,8 @@ local function gifLzwDecode(data, minCodeSize, maxOutput)
 				if nextCode < 4096 then
 					dict[nextCode] = newEntry
 					nextCode = nextCode + 1
-					-- The decoder learns one dictionary entry later than the encoder.
-					if nextCode >= (2 ^ codeSize) - 1 and codeSize < 12 then
+					-- Increase the code width when the next free dictionary code reaches the current width's limit.
+					if nextCode >= (2 ^ codeSize) and codeSize < 12 then
 						codeSize = codeSize + 1
 					end
 				end
