@@ -14,10 +14,10 @@ This note records the checks performed on the seven Lua-based project sources in
 
 ## Verification performed
 
-- Parsed all 15 tracked Lua source and test files in the seven projects with Lua 5.4: **15 passed, 0 syntax errors** in GitHub Actions run [#44120155848](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120155848).
+- Parsed all 15 tracked Lua source and test files in the seven projects with Lua 5.4: **15 passed, 0 syntax errors** in GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189).
 - Executed Lua Code Checker's included `tests/sample_bad.lua` fixture with the bundled checker: **3 errors and 3 warnings**, matching the fixture's expected output. The CI job checks both the expected exit code and the exact summary. The focused regression script also passed its namespace allowlist and escaped-newline line-number assertions.
 - Ran the checker across the 15 Lua files: it reported the intentional findings in `sample_bad.lua` plus heuristic warnings in some project files. These warnings need manual review; the checker is pattern-based and does not establish that each warning is a defect.
-- Added `.github/workflows/validate-lua-projects.yml` to parse all 15 Lua files, validate the analyzer fixture, and run focused regression checks on pushes and pull requests. GitHub Actions run [#44120155848](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120155848) completed successfully.
+- Added `.github/workflows/validate-lua-projects.yml` to parse all 15 Lua files, validate the analyzer fixture, and run focused regression checks on pushes and pull requests. GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189) completed successfully.
 
 ## Not verified in this environment
 
@@ -127,7 +127,7 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 
 ## Latest validation after the November 17 source updates
 
-- GitHub Actions run [#44120155848](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120155848) completed successfully on commit `695f9b0`.
+- GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189) completed successfully on commit `695f9b0`.
 - All 15 tracked Lua files parsed with Lua 5.4; the Lua Code Checker fixture produced its expected 3 errors and 3 warnings; the focused regression script passed.
 - The run validates syntax and the checker's included regression cases. It does not execute the GIF decoder against a conformance corpus, compile the optional native video bridge, exercise the host-specific Lua scripts, or send a live AI provider request.
 
@@ -140,3 +140,10 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 
 
 - Scoped the Threaded AI response-cache key by the active provider and model. A prompt cached under one backend/model can no longer be reused after switching to a different provider or rotating models.
+
+
+## Final CI check for the latest source commit
+
+- Commit `701f3a2` scopes Threaded AI cache entries by provider and model, in addition to the worker lifecycle and GIF parser validation updates in its parent commit.
+- GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189) completed successfully: all 15 tracked Lua files parsed, the analyzer fixture matched its expected 3 errors and 3 warnings, and the focused regression tests passed.
+- These checks do not execute MoonLoader runtime paths, GIF conformance fixtures, native video compilation, or live provider requests.
