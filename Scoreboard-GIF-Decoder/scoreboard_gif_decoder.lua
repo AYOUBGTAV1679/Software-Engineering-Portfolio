@@ -23,7 +23,7 @@ u8 = encoding.UTF8
 encoding.default = 'CP1251'
 
 local russian_characters = {
-	[168] = 'Ё', [184] = 'ё', [192] = 'А', [193] = 'Б', [194] = 'В', [195] = 'Г', [196] = 'Д', [197] = 'Е', [198] = 'Ж', [199] = 'З', [200] = 'И', [201] = 'Й', [202] = 'К', [203] = 'Л', [204] = 'М', [205] = 'Н', [206] = 'О', [207] = 'П', [208] = 'Р', [209] = 'С', [210] = 'Т', [211] = 'У', [212] = 'Ф', [213] = 'Х', [214] = 'Ц', [215] = 'Ч', [216] = 'Ш', [217] = 'Щ', [218] = 'Ъ', [219] = 'Ы', [220] = 'Ь', [221] = 'Э', [222] = 'Ю', [223] = 'Я', [224] = 'а', [225] = 'б', [226] = 'в', [227] = 'г', [228] = 'д', [229] = 'е', [230] = 'ж', [231] = 'з', [232] = 'и', [233] = 'й', [234] = 'к', [235] = 'л', [236] = 'м', [237] = 'н', [238] = 'о', [239] = 'п', [240] = 'р', [241] = 'с', [242] = 'т', [243] = 'у', [244] = 'ф', [245] = 'х', [246] = 'ц', [247] = 'ч', [248] = 'ш', [249] = 'щ', [250] = 'ъ', [251] = 'ы', [252] = 'ь', [253] = 'э', [254] = 'ю', [255] = 'я',
+	[168] = 'ВЁ', [184] = 'Вё', [192] = 'ГЂ', [193] = 'ГЃ', [194] = 'Г‚', [195] = 'Гѓ', [196] = 'Г„', [197] = 'Г…', [198] = 'Г†', [199] = 'Г‡', [200] = 'Г€', [201] = 'Г‰', [202] = 'ГЉ', [203] = 'Г‹', [204] = 'ГЊ', [205] = 'ГЌ', [206] = 'ГЋ', [207] = 'ГЏ', [208] = 'Гђ', [209] = 'Г‘', [210] = 'Г’', [211] = 'Г“', [212] = 'Г”', [213] = 'Г•', [214] = 'Г–', [215] = 'Г—', [216] = 'Г', [217] = 'Г™', [218] = 'Гљ', [219] = 'Г›', [220] = 'Гњ', [221] = 'Гќ', [222] = 'Гћ', [223] = 'Гџ', [224] = 'Г ', [225] = 'ГЎ', [226] = 'Гў', [227] = 'ГЈ', [228] = 'Г¤', [229] = 'ГҐ', [230] = 'Г¦', [231] = 'Г§', [232] = 'ГЁ', [233] = 'Г©', [234] = 'ГЄ', [235] = 'Г«', [236] = 'Г¬', [237] = 'Г­', [238] = 'Г®', [239] = 'ГЇ', [240] = 'Г°', [241] = 'Г±', [242] = 'ГІ', [243] = 'Гі', [244] = 'Гґ', [245] = 'Гµ', [246] = 'Г¶', [247] = 'Г·', [248] = 'Гё', [249] = 'Г№', [250] = 'Гє', [251] = 'Г»', [252] = 'Гј', [253] = 'ГЅ', [254] = 'Гѕ', [255] = 'Гї',
 }
 local quitReason = {
   "Crashed",
@@ -382,12 +382,18 @@ local function u16le(s, i)
 	return a + b * 256
 end
 
--- Decode one GIF LZW-compressed sub-block stream into a list of color indices.
-local function gifLzwDecode(data, minCodeSize)
+-- Decode one GIF LZW-compressed sub-block stream into exactly maxOutput indices.
+-- Invalid/truncated code streams are rejected instead of returning partial frames.
+local function gifLzwDecode(data, minCodeSize, maxOutput)
+	if type(data) ~= "string" or type(minCodeSize) ~= "number"
+			or minCodeSize < 2 or minCodeSize > 8
+			or type(maxOutput) ~= "number" or maxOutput < 1 then
+		return nil, "invalid LZW parameters"
+	end
+
 	local CLEAR = lshift(1, minCodeSize)
 	local ENDC = CLEAR + 1
 	local codeSize, nextCode, dict
-
 	local function resetDict()
 		dict = {}
 		for i = 0, CLEAR - 1 do dict[i] = {i} end
@@ -398,7 +404,6 @@ local function gifLzwDecode(data, minCodeSize)
 
 	local out = {}
 	local bitBuf, bitCount, pos, dataLen = 0, 0, 1, #data
-
 	local function readCode()
 		while bitCount < codeSize do
 			if pos > dataLen then return nil end
@@ -415,7 +420,8 @@ local function gifLzwDecode(data, minCodeSize)
 	local prevCode = nil
 	while true do
 		local code = readCode()
-		if code == nil or code == ENDC then break end
+		if code == nil then return nil, "truncated LZW stream (missing end code)" end
+		if code == ENDC then break end
 		if code == CLEAR then
 			resetDict()
 			prevCode = nil
@@ -428,31 +434,30 @@ local function gifLzwDecode(data, minCodeSize)
 				for i, v in ipairs(dict[prevCode]) do entry[i] = v end
 				entry[#entry + 1] = dict[prevCode][1]
 			else
-				break
+				return nil, "invalid LZW dictionary reference"
+			end
+			if #out + #entry > maxOutput then
+				return nil, "LZW output exceeds image dimensions"
 			end
 			for _, v in ipairs(entry) do out[#out + 1] = v end
 			if prevCode then
 				local newEntry = {}
 				for i, v in ipairs(dict[prevCode]) do newEntry[i] = v end
 				newEntry[#newEntry + 1] = entry[1]
-				dict[nextCode] = newEntry
-				nextCode = nextCode + 1
-				-- FIX: a GIF LZW decoder is always exactly one code BEHIND the
-				-- encoder's dictionary growth (it can only learn a new entry
-				-- after reading the code AFTER it), so it must widen its read
-				-- size one entry EARLIER than this naive '>= 2^codeSize' check
-				-- did - otherwise it reads the wrong bit width the moment the
-				-- encoder grows, and every code after that is garbage. This is
-				-- the single most common bug in from-scratch LZW/GIF decoders;
-				-- verified against an independent reference encoder/decoder -
-				-- the old condition decoded only 5/160 test pixels correctly
-				-- before desyncing completely.
-				if nextCode >= (2 ^ codeSize) - 1 and codeSize < 12 then
-					codeSize = codeSize + 1
+				if nextCode < 4096 then
+					dict[nextCode] = newEntry
+					nextCode = nextCode + 1
+					-- The decoder learns one dictionary entry later than the encoder.
+					if nextCode >= (2 ^ codeSize) - 1 and codeSize < 12 then
+						codeSize = codeSize + 1
+					end
 				end
 			end
 			prevCode = code
 		end
+	end
+	if #out ~= maxOutput then
+		return nil, "decoded pixel count does not match image dimensions"
 	end
 	return out
 end
@@ -497,6 +502,9 @@ local function gifDecodeFile(path)
 	if band(rshift(packed, 7), 1) == 1 then
 		local gctSize = band(packed, 0x07)
 		local gctEntries = lshift(2, gctSize)
+		if pos + (gctEntries * 3) - 1 > #data then
+			return nil, "truncated global color table"
+		end
 		globalPalette = {}
 		for i = 0, gctEntries - 1 do
 			globalPalette[i] = {u8b(data, pos), u8b(data, pos + 1), u8b(data, pos + 2)}
@@ -512,6 +520,8 @@ local function gifDecodeFile(path)
 	local prevSnapshot = nil
 	local dataLen = #data
 	local safety = 0
+	local totalFramePixels = 0
+	local MAX_TOTAL_FRAME_PIXELS = 4000000
 
 	while pos <= dataLen and safety < 20000 do
 		safety = safety + 1
@@ -540,27 +550,48 @@ local function gifDecodeFile(path)
 			local imgW = u16le(data, pos); pos = pos + 2
 			local imgH = u16le(data, pos); pos = pos + 2
 			local imgPacked = u8b(data, pos); pos = pos + 1
+			if not imgPacked or imgW <= 0 or imgH <= 0 or imgW * imgH > 4000000 then
+				return nil, "unsupported or truncated image descriptor"
+			end
+			totalFramePixels = totalFramePixels + (screenW * screenH)
+			if totalFramePixels > MAX_TOTAL_FRAME_PIXELS then
+				return nil, "GIF exceeds the total decoded-frame pixel budget"
+			end
 			local lctFlag = band(rshift(imgPacked, 7), 1)
 			local interlaceFlag = band(rshift(imgPacked, 6), 1)
 			local palette = globalPalette
 			if lctFlag == 1 then
 				local lctSize = band(imgPacked, 0x07)
 				local lctEntries = lshift(2, lctSize)
+				if pos + (lctEntries * 3) - 1 > dataLen then
+					return nil, "truncated local color table"
+				end
 				palette = {}
 				for i = 0, lctEntries - 1 do
 					palette[i] = {u8b(data, pos), u8b(data, pos + 1), u8b(data, pos + 2)}
 					pos = pos + 3
 				end
 			end
+			if not palette then return nil, "image has no color table" end
 			local minCodeSize = u8b(data, pos); pos = pos + 1
+			if not minCodeSize or minCodeSize < 2 or minCodeSize > 8 then
+				return nil, "invalid GIF LZW minimum code size"
+			end
 			local chunks = {}
 			local sub = u8b(data, pos); pos = pos + 1
-			while sub and sub > 0 do
+			if not sub then return nil, "truncated image data blocks" end
+			while sub > 0 do
+				if pos + sub - 1 > dataLen then
+					return nil, "truncated image data sub-block"
+				end
 				chunks[#chunks + 1] = data:sub(pos, pos + sub - 1)
 				pos = pos + sub
-				sub = u8b(data, pos); pos = pos + 1
+				sub = u8b(data, pos)
+				if not sub then return nil, "missing image data terminator" end
+				pos = pos + 1
 			end
-			local indices = gifLzwDecode(table.concat(chunks), minCodeSize)
+			local indices, lzwError = gifLzwDecode(table.concat(chunks), minCodeSize, imgW * imgH)
+			if not indices then return nil, lzwError end
 			if interlaceFlag == 1 then
 				indices = gifDeinterlace(indices, imgW, imgH)
 			end
@@ -1653,7 +1684,7 @@ function string.rlower(s)
 		 local ch = s:byte(i)
 		 if ch >= 192 and ch <= 223 then -- upper russian characters
 			  output = output .. russian_characters[ch + 32]
-		 elseif ch == 168 then -- Ё
+		 elseif ch == 168 then -- ВЁ
 			  output = output .. russian_characters[184]
 		 else
 			  output = output .. string.char(ch)
@@ -1671,7 +1702,7 @@ function string.rupper(s)
 		 local ch = s:byte(i)
 		 if ch >= 224 and ch <= 255 then -- lower russian characters
 			  output = output .. russian_characters[ch - 32]
-		 elseif ch == 184 then -- ё
+		 elseif ch == 184 then -- Вё
 			  output = output .. russian_characters[168]
 		 else
 			  output = output .. string.char(ch)
@@ -1691,7 +1722,7 @@ function SE.onShowDialog()
 end
 function SE.onServerMessage(color, text)
 	gameInit = true
-	if pendingNumberId and text:find('Номер игрока', 1, true) and text:find('%[' .. pendingNumberId .. '%]') then
+	if pendingNumberId and text:find('ГЌГ®Г¬ГҐГ° ГЁГЈГ°Г®ГЄГ ', 1, true) and text:find('%[' .. pendingNumberId .. '%]') then
 		local number = text:match('(%d+)%s*$')
 		if number then
 			sampSetChatInputText('/sms ' .. number .. ' ')

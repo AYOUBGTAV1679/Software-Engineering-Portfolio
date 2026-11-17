@@ -71,3 +71,11 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - A new recording resets its queue and wait counters. File-open failure also clears the pending state so events collected during a failed start are not carried into a later recording.
 - Sanitized the user-configurable filename prefix and captured nickname before building a path. Existing timestamp collisions receive a numeric suffix instead of opening the previous recording in append mode.
 - These are source-level lifecycle and path-safety corrections. Packet/RPC capture and replay still require runtime testing in the target host; the changes do not validate replay compatibility across host versions.
+
+
+## Scoreboard GIF decoder input and allocation audit
+
+- Hardened the LZW decoder to reject invalid dictionary references, truncated streams without an end code, and decoded output that does not exactly match the image descriptor's pixel count. It stops before appending output beyond the declared count.
+- Added validation for GIF LZW minimum code size, missing color tables, truncated global/local palettes, truncated image sub-blocks, and invalid image descriptors.
+- Added an aggregate decoded-frame pixel budget in addition to logical-screen and per-image dimension checks. The README documents that this bounds allocations but may reject long animations.
+- The changes have not yet been exercised against a generated GIF regression corpus or the target host's texture-loading path. CI syntax validation is not a substitute for GIF conformance tests.

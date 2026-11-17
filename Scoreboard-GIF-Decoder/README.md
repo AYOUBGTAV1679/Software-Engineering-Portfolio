@@ -13,7 +13,7 @@ The Lua decoder handles:
 - GIF headers and logical screen descriptors.
 - Global and local color tables.
 - Graphic control extensions and image descriptors.
-- LZW decompression with variable-width codes from 2 to 12 bits.
+- LZW decompression with variable-width codes from 2 to 12 bits. Invalid or truncated code streams are rejected, and decoded output is capped at the image's declared pixel count.
 - Clear and end-of-information codes and dictionary growth.
 - Frame transparency, composition, and disposal handling.
 - Frame timing and playback independent of the host's render callback rate.
@@ -41,4 +41,4 @@ Copy `scoreboard_gif_decoder.lua` into the host's MoonLoader scripts directory. 
 
 ## Limitations
 
-Memory use depends on decoded frame dimensions and the number of cached frames. The source does not impose a general resource budget for every possible GIF. Large or malformed media should be tested carefully. The native video bridge requires a compatible FFmpeg build, a working compiler toolchain, and a verified texture-upload function before it can be considered usable.
+The decoder limits the logical screen and each image descriptor to 4,000,000 pixels, and limits the aggregate logical-screen pixels copied across frames to 4,000,000 per decode. These bounds reduce runaway allocations but can reject long animations or very large images. Large or malformed media should still be tested carefully. The native video bridge requires a compatible FFmpeg build, a working compiler toolchain, and a verified texture-upload function before it can be considered usable.
