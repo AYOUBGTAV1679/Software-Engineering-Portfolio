@@ -58,7 +58,7 @@ The script requires a valid key for the selected provider, the selected model to
 
 The response extractor handles escaped quotes, newline escapes, and backslash sequences while scanning the response content. A past defect involved a response ending with a literal backslash: a redundant look-behind check could treat the actual closing quote as escaped and continue reading into the next JSON field. The current source removes that redundant check and consumes escape pairs in one pass.
 
-The extractor is intentionally narrow and is not a general-purpose JSON parser. Provider response changes or unexpected JSON layouts may require an update.
+The extractor is intentionally narrow and is not a general-purpose JSON parser. Provider error payloads are classified separately before the script reports a parse failure, so recognized rate-limit and unavailable-model responses can trigger model rotation. Provider response changes or unexpected JSON layouts may still require an update.
 
 ## Requirements and setup
 

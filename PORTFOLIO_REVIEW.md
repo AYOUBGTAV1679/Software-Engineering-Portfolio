@@ -154,3 +154,10 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Captured the selected provider and model when each request is created, and passed that exact pair through endpoint, API-key, and request-body construction.
 - A delayed error now rotates a model only if the failed request still matches the currently selected provider and model. This prevents a late response from an earlier provider selection from changing the model list after the user has switched providers.
 - This is a source-level concurrency correction. Provider switching during a live request, timeout behavior, and actual provider responses still require a host test with private credentials.
+
+
+## Threaded AI provider error handling audit
+
+- Added a separate classification path for provider error payloads that do not contain a chat-completion content field. Recognized rate-limit, model-decommissioned, and model-not-found responses now reach the model-rotation logic instead of being reported only as generic JSON parse failures.
+- Error matching is case-insensitive and uses literal substring checks. Unknown response shapes remain visible as parse errors; this is not a complete provider-specific JSON error parser.
+- CI validates Lua syntax for this change. Live provider error responses have not been exercised in the target host.

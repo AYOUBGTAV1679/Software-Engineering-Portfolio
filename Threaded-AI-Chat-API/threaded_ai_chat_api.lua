@@ -626,6 +626,24 @@ local function ExtractContent(raw)
     return table.concat(buf)
 end
 
+-- Classify provider error payloads before treating non-chat-completion JSON as a parse failure.
+-- Both providers return structured error bodies instead of a "choices[].message.content" field.
+local function ClassifyProviderError(raw)
+    local lower = tostring(raw or ""):lower()
+    if lower:find("rate limit", 1, true)
+        or lower:find("rate_limit", 1, true)
+        or lower:find("too many requests", 1, true) then
+        return "Rate limit: provider rejected the request"
+    end
+    if lower:find("decommissioned", 1, true)
+        or lower:find("model_not_found", 1, true)
+        or lower:find("unknown model", 1, true)
+        or lower:find("model does not exist", 1, true) then
+        return "Model unavailable: provider rejected the selected model"
+    end
+    return nil
+end
+
 -- High-level: send request and call callback when done
 local function SendRequest(cmd, mode, text, on_done, on_err)
     -- A request must keep the provider/model pair it started with. The user
@@ -666,7 +684,12 @@ local function SendRequest(cmd, mode, text, on_done, on_err)
                             pcall(function() decoded = u8:decode(val) end)
                             if on_done then on_done(decoded) end
                         else
-                            reportError("Parse error: " .. r.text:sub(1,80))
+                            local providerError = ClassifyProviderError(r.text)
+                            if providerError then
+                                reportError(providerError)
+                            else
+                                reportError("Parse error: " .. r.text:sub(1,80))
+                            end
                         end
                     end
                 end
@@ -723,10 +746,13 @@ local function SendToServer(multi, cb)
             local selectionUnchanged = request_info
                 and request_info.use_or == USE_OR
                 and request_info.model == MODEL
-            local isModelAvailabilityError = err_str:find("Rate limit")
-                or err_str:find("rate_limit")
-                or err_str:find("decommissioned")
-                or err_str:find("does not exist")
+            local lowerError = err_str:lower()
+            local isModelAvailabilityError = lowerError:find("rate limit", 1, true)
+                or lowerError:find("rate_limit", 1, true)
+                or lowerError:find("decommissioned", 1, true)
+                or lowerError:find("model_not_found", 1, true)
+                or lowerError:find("unknown model", 1, true)
+                or lowerError:find("model does not exist", 1, true)
             if isModelAvailabilityError and selectionUnchanged then
                 local active_models = request_info.use_or and MODELS_OR or MODELS
                 model_idx = model_idx + 1
