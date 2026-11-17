@@ -457,6 +457,7 @@ Recorder = {
 				_CurrentSaveName = nil
 				_CurrentFile = nil
 				_State = Mode.idle
+				_RecorderClosing = false
 				return
 			end
 
