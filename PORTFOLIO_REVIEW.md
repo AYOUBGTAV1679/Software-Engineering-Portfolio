@@ -1,171 +1,69 @@
 # Portfolio Review and Verification Notes
 
-This note records the checks performed on the seven Lua-based project sources in this portfolio, alongside the separately documented Aegis application. It separates syntax/static checks from integration tests that require each project's target host or external service.
+This document records the current engineering state of the eight projects. It distinguishes checks that can be repeated in CI from behavior that still requires the original host application, native dependencies, Windows, or live services.
 
-## Changes made
+## Repository-wide verification
 
-- Reworked the seven project READMEs to match the source more closely, preserve each project's identity, and describe limitations where a feature is incomplete or depends on host-specific APIs.
-- Corrected the documented walk-style range in Zeno Skin Changer to IDs `0` through `20`.
-- Corrected Coordinate Lookup Tool documentation: its coordinate cache is in memory, its replay navigation moves to the next cached participant and repeats the last successful target, and it does not implement a persistent fallback-coordinate store or previous-target cycling.
-- Removed unsupported claims about replaying dialog events from Network Session Recorder documentation.
-- Marked the MP4 bridge in Scoreboard GIF Decoder as experimental: the C bridge is explicitly uncompiled/untested in its own source, and the Lua texture-upload call is a placeholder.
-- Corrected RP Respond AI's provider-routing defect. Requests now select the endpoint and API key associated with the active provider, and key validation follows the active provider rather than always requiring the Groq key.
-- Rewrote the portfolio index to describe the engineering focus of all eight project folders without promotional claims.
+The latest Lua validation run, [GitHub Actions #44123235278](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44123235278), completed successfully on commit `8b7e453282a2c7e9954ea4e35d6aa268bc72cff3`.
 
-## Verification performed
+The workflow:
+- Parsed all **19 tracked Lua files** across the seven Lua projects with Lua 5.4.
+- Checked the Lua Code Checker fixture against its expected result: **3 errors, 3 warnings, 0 info**.
+- Ran the Lua Code Checker regression tests for module allowlisting and escaped-newline line tracking.
+- Ran **13 generated GIF decoder regression cases**, covering valid GIF87a/GIF89a samples and malformed-input boundaries.
+- Ran **7 provider-error classifier cases**, including rate-limit and missing-model responses plus an unrelated invalid-key response.
 
-- Parsed all 19 tracked Lua source, module, and test files in the seven projects with Lua 5.4: **17 passed, 0 syntax errors** in GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011).
-- Executed Lua Code Checker's included `tests/sample_bad.lua` fixture with the bundled checker: **3 errors and 3 warnings**, matching the fixture's expected output. The CI job checks both the expected exit code and the exact summary. The focused Lua Code Checker regression script also passed its namespace allowlist and escaped-newline line-number assertions. The new Scoreboard GIF regression suite builds GIF data in memory and checks valid GIF87a/GIF89a inputs, graphic-control extension handling, missing trailers, truncated extension/image blocks, logical-screen bounds, palette-index validation, invalid LZW references, missing LZW end codes, missing color tables, and unknown block markers.
-- Ran the checker across the 15 Lua files: it reported the intentional findings in `sample_bad.lua` plus heuristic warnings in some project files. These warnings need manual review; the checker is pattern-based and does not establish that each warning is a defect.
-- Added `.github/workflows/validate-lua-projects.yml` to parse all 15 Lua files, validate the analyzer fixture, and run focused regression checks on pushes and pull requests. GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011) completed successfully.
+The Aegis Windows packaging workflow previously completed [run #43928542059](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/43928542059) with **206 tests**, a PyInstaller build, and an uploaded `Aegis-Windows-x64.zip` package of 269,855,143 bytes. This is CI build and test evidence; it is not a GUI smoke test on a separate Windows device.
 
-## Not verified in this environment
+## Project-specific engineering notes
 
-- Runtime behavior that depends on the MoonLoader host, native functions, ImGui integration, packet/RPC hooks, or installed extensions.
-- Successful live requests to Groq or OpenRouter; no live credentials or provider integration test were used.
-- MP4 bridge compilation or execution. FFmpeg development headers/libraries were not available, and the source itself marks the bridge and texture-upload integration as unverified.
-- Behavior against every supported host/client version or all possible input assets and recordings.
+### 3D Model Loader — Zeno Skin Changer
 
-A syntax pass does not establish runtime correctness. The documented dependencies and limitations remain part of each project's setup and evaluation criteria.
+The source now uses the documented `loadTextureDictionary` and animation request/playback flow rather than the earlier unsupported calls. The walk-style IDs documented by the project are **0–20**. The custom DFF path still depends on an external extension exposing `loadModelInfo`; that extension and the complete custom-model path need to be identified and tested in the target host.
 
-## Follow-up API and build audit
+### Crash Guard
 
-- **Zeno Skin Changer:** replaced the undocumented TXD call with the documented `loadTextureDictionary` function and changed walk-style playback to the documented `requestAnimation` / `taskPlayAnim` flow, including an animation-loaded check. The source now reports missing host APIs rather than blindly calling an absent TXD/DFF loader. It also compares the logical saved skin ID against the correct runtime slot for custom models, preventing an unnecessary reload loop. Custom DFF loading still requires an extension that supplies `loadModelInfo`; the target host must be identified and smoke-tested before these paths can be called operational.
-- **Aegis Windows package:** run [#43928542059](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/43928542059) passed **206 tests**, built `dist/Aegis/Aegis.exe`, and uploaded `Aegis-Windows-x64.zip` (269,855,143 bytes). PyInstaller emitted Qt-related collection warnings during the successful build. The workflow did not launch the GUI for a smoke test on a separate Windows device.
-- **Threaded AI Chat API:** the source now resolves the endpoint and API key together from the selected provider. No live Groq or OpenRouter request has been verified, because no live credentials were used.
+The script uses the host game timer for elapsed-time measurements and scans vehicles around the local character through `findAllRandomVehiclesInSphere`. The documented scan radius is **250 units**, with duplicate handling and a per-scan ceiling. The scan is not a count of every vehicle in the full game world. Iterator behavior and returned handles still require a MoonLoader runtime test.
 
-## Next validation priorities
+### Lua Code Checker
 
-1. Identify or replace the external DFF-loading extension required by Zeno Skin Changer, then smoke-test the TXD and walk-style paths in the target host.
-2. Run each MoonLoader project in its supported host and record reproducible smoke-test steps and results.
-3. Launch the packaged Aegis application on a Windows device and verify startup, scanning, report export, and shutdown.
-4. Exercise provider selection with test credentials while keeping secrets out of the repository.
-5. Expand GIF testing with a broader external conformance corpus and verify texture loading in the target host; add native bridge build checks before describing the video path as supported.
+The checker includes tokenizer, rules, conservative automatic fixes, and focused regression cases. CI checks the intentional sample fixture's exact summary and validates path handling, namespace allowlisting, and escaped-newline line tracking. The implementation uses `goto`, so it should be described as compatible with Lua 5.2+ and LuaJIT 2.1 rather than plain Lua 5.1.
 
-## Crash Guard API and timing audit
+### Coordinate Lookup Tool
 
-- Replaced the project’s unsupported `FindFirstVehicle` / `FindNextVehicle` / `EndFindVehicle` enumeration calls. Those names are not present in the checked MoonLoader opcode reference. Vehicle counting now uses `findAllRandomVehiclesInSphere` around the local character, with a 250-unit radius, a duplicate guard, and a per-scan ceiling.
-- Replaced `os.clock()` for frame timing and periodic intervals with the host's `getGameTimer()`. Lua's `os.clock()` measures process CPU time; it is not a reliable wall-clock source for frame-to-frame intervals across calls to `wait(0)`.
-- Updated command/UI messaging and the README to state the actual scan radius. The script now reports when the vehicle scan API is unavailable rather than presenting an empty result as zero vehicles.
-- These changes are source-level corrections. They need MoonLoader runtime validation, especially the iterator behavior and its returned vehicle handles, before they can be considered verified in the target host.
+Player IDs are checked as integers in the supported **0–999** range before host lookup calls. A cached slot is invalidated when a different nickname is observed for that ID. The cache is session-only; a nickname change check cannot prove identity if names are reused, and cached positions can become stale. Host behavior has not been independently smoke-tested.
 
-## Lua Code Checker follow-up regression fixes
+### Network Session Recorder
 
-- Tightened `unverified-require` so the allowlist matches only the first module namespace segment. A trusted word appearing later in a dotted module name no longer suppresses a finding for an unknown root module.
-- Corrected tokenizer line tracking when a short string contains an escaped newline.
-- Made command-line module lookup accept both Unix and Windows path separators when the checker is invoked through a path.
-- Extended the intentional fixture to cover a misleading nested module name and added focused Lua regression tests. CI now checks **15 Lua files**, the expected fixture summary (**3 errors, 3 warnings, 0 info**), and the focused regression assertions.
-- Clarified interpreter compatibility: the implementation uses `goto`, which is native in Lua 5.2+ and supported by LuaJIT 2.1; it should not be advertised as compatible with a plain Lua 5.1 interpreter.
-- CI follow-up: the first regression-test invocation ran from the repository root, so Lua's default module path could not resolve the checker modules. The workflow now runs that test from the project directory, matching its module layout.
+The recorder prevents overlapping recording workers during stop/finalization, drains the pending queue before closing, resets queue state at the next start, and sanitizes user-controlled filename parts. File writes are buffered with periodic flushing and a final flush at close. Packet/RPC capture, replay compatibility, sustained packet load, and forced disk-write failures still need tests in the target host.
 
-## Coordinate Lookup Tool input and cache audit
+### Scoreboard GIF Decoder
 
-- Added an explicit integer player-ID guard for the supported scan/cache range (0–999). Invalid, fractional, negative, and out-of-range command values are rejected before host lookup or teleport functions are called.
-- When a connected player slot is observed with a different nickname, the prior cached entry for that slot is invalidated before refreshing its coordinates. This reduces the risk of replay navigation using coordinates associated with a previous visible occupant of the same ID.
-- The cache remains session-only and keyed by numeric player ID. Nickname comparison cannot prove identity when names are reused, and cached positions can still be stale. Runtime behavior still requires validation in the target host.
+The GIF parsing and LZW logic has been separated into the pure-Lua `gif_decoder_core.lua` module. The CI regression suite constructs compact GIF streams in memory and checks accepted GIF87a/GIF89a headers, graphic-control extensions, trailer handling, truncated extension and image sub-blocks, logical-screen bounds, palette-index validation, invalid LZW dictionary references, missing LZW end codes, missing color tables, and unknown block markers.
 
+The suite is a targeted regression set, not a complete third-party GIF conformance corpus. Texture loading and playback still need testing in the target MoonLoader/ImGui environment. The optional `video_bridge.c` remains uncompiled and untested, and the Lua texture upload call is explicitly a placeholder; MP4 playback must remain labelled experimental.
 
-## Network Session Recorder lifecycle and filename audit
+Installation note: the scoreboard script requires `gif_decoder_core.lua` in the host's `moonloader/lib` directory.
 
-- Prevented overlapping recorder workers. Stop now enters a finalization phase; the active worker drains queued events, flushes and closes its file, then releases the closing guard. A new recording is rejected until this finishes, preventing two workers from consuming the shared event queue.
-- A new recording resets its queue and wait counters. File-open failure also clears the pending state so events collected during a failed start are not carried into a later recording.
-- Sanitized the user-configurable filename prefix and captured nickname before building a path. Existing timestamp collisions receive a numeric suffix instead of opening the previous recording in append mode.
-- These are source-level lifecycle and path-safety corrections. Packet/RPC capture and replay still require runtime testing in the target host; the changes do not validate replay compatibility across host versions.
+### Threaded AI Chat API
 
+HTTP requests run in Lua Lanes workers, and the main coroutine polls for a result. The request captures its provider, model, endpoint, and API key at creation so a provider switch during an in-flight request does not redirect it. Delayed model errors only rotate the active model when the failed request still matches the current provider/model selection.
 
-## Scoreboard GIF decoder input and allocation audit
+Provider error classification is isolated in `provider_error_classifier.lua` and covered by seven pure-Lua regression cases. Recognized rate-limit and unavailable-model payloads are normalized before reaching model rotation. The script deliberately requests lane cancellation on timeout without force-killing a worker; cancellation may not interrupt a worker blocked in a native or network call.
 
-- Hardened the LZW decoder to reject invalid dictionary references, truncated streams without an end code, and decoded output that does not exactly match the image descriptor's pixel count. It stops before appending output beyond the declared count.
-- Added validation for GIF LZW minimum code size, missing color tables, truncated global/local palettes, truncated image sub-blocks, and invalid image descriptors.
-- Added an aggregate decoded-frame pixel budget in addition to logical-screen and per-image dimension checks. The README documents that this bounds allocations but may reject long animations.
-- The decoder now has a repeatable pure-Lua regression suite with generated valid and malformed GIF inputs, executed by the Lua validation workflow. This is a focused regression set rather than a complete external GIF conformance corpus; the target host's texture-loading path remains unverified.
+No live Groq or OpenRouter request has been verified. The exact Lua Lanes and HTTP module versions in the target host also need compatibility testing. Installation note: copy `provider_error_classifier.lua` into `moonloader/lib` alongside the other documented dependencies. Do not commit real API keys.
 
+### Lua Malware Scanner — Aegis
 
-## Threaded AI Chat API timeout and worker error audit
+Aegis is a separate Python application with CLI and GUI entry points. Its CI evidence currently covers the 206-test suite and Windows packaging. A separate Windows runtime smoke test is still needed for GUI startup, scanning, report export, and shutdown.
 
-- Replaced os.clock deadlines in both HTTP-result polling loops. That function measures process CPU time, so it is unsuitable for elapsed request deadlines in a cooperative script that yields frequently. The code now uses the host game timer in milliseconds, with a seconds-resolution os.time fallback when the host timer is unavailable.
-- Moved the requests module load inside the worker's protected call. A missing HTTP dependency now travels back as an error result instead of terminating the lane without notifying its caller.
-- Protected Linda/channel and worker creation. Setup failures are placed into the request result queue so the UI can surface an actionable error.
-- This does not forcibly cancel a running HTTP call after its deadline, and no live provider request has been verified. The script still requires real credentials and the documented host dependencies.
+## Remaining validation work
 
+1. Test the seven MoonLoader projects in their supported host and record reproducible smoke-test results.
+2. Expand GIF coverage with an external conformance corpus and test real texture loading/playback.
+3. Compile and integrate the optional native video bridge only after the FFmpeg toolchain and ImGui texture API are confirmed.
+4. Test provider switching, model rotation, worker timeout, and cancellation against live services using private credentials.
+5. Run Aegis on a Windows device and verify the GUI workflow.
+6. Exercise Network Session Recorder under sustained traffic and controlled file-write failures.
 
-## Network Session Recorder timing and write-buffer audit
-
-- Removed the per-record flush from the queue writer. The writer now buffers sequential writes and flushes on a five-second elapsed-time schedule, followed by a final flush at close, avoiding a disk flush for every captured event.
-- Replaced process-CPU-time measurements for recording duration and periodic flush checks with the host game timer (milliseconds), falling back to system time at one-second resolution. This makes the displayed duration and five-second flush interval track elapsed time while the script yields.
-- The recorder still needs host runtime testing under sustained packet load and forced file-write failures. The CI Lua parser does not exercise disk throughput or native hooks.
-
-
-- The short response-correlation window used by the RP-script heuristic now uses the same elapsed-time clock as request deadlines. It no longer compares events with os.clock process-CPU time, which could distort a three-second window while the host yields.
-
-
-- Replaced process-CPU-time clock reads for GIF frame delays, experimental video frame scheduling, image transitions, and automatic background cycling with the host game timer in seconds. A one-second-resolution system clock is used only if the host timer is unavailable. This corrects elapsed-time measurement but does not validate the experimental video bridge.
-
-
-- Added defensive handling for the experimental video bridge: null native handles are rejected, and invalid or oversized dimensions are closed and rejected before the Lua side allocates a raw RGBA frame buffer. The bridge remains uncompiled and untested; this guard is not evidence that video playback works.
-
-
-## Latest repository-wide Lua CI result
-
-- Workflow run [#44116518796](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44116518796) completed successfully on the current source commit before this documentation-only refresh.
-- The workflow parsed all 15 tracked Lua source/test files with Lua 5.4, checked the fixture's expected **3 errors, 3 warnings, 0 info** output, and ran the Lua Code Checker regression tests.
-- The run confirms Lua syntax and these focused regression assertions. It does not exercise the MoonLoader runtime, decode a generated GIF corpus, compile the FFmpeg bridge, or make a live provider request.
-
-
-## GIF decoder malformed-input handling
-
-- Tightened container validation to accept only GIF87a/GIF89a signatures, validate Graphic Control Extension size and terminator, bounds-check generic extension sub-blocks, reject unknown block markers, and require the GIF trailer before returning decoded frames.
-- The LZW decoder rejects invalid dictionary references, truncated streams, and output that does not exactly match the frame descriptor. The aggregate decoded-screen pixel budget remains in place.
-- No generated fixture corpus or target-host texture integration test has been run. These changes are source-level defensive checks and remain subject to decoder conformance testing.
-
-## Threaded AI request worker lifecycle
-
-- Retained the lane handle for each active HTTP request. When the request deadline expires, the polling coroutine now requests hard lane cancellation and reports the timeout rather than silently abandoning the worker.
-- The implementation deliberately does not force-kill a worker. Lua Lanes cancellation is cooperative; a worker blocked inside a native/network call may not process cancellation until control returns to Lua. This limitation is documented.
-- Provider routing and API-key selection remain paired at request creation. No live provider request has been made as part of this source review.
-
-
-## Latest validation after the November 17 source updates
-
-- GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011) completed successfully on commit `695f9b0`.
-- All 15 tracked Lua files parsed with Lua 5.4; the Lua Code Checker fixture produced its expected 3 errors and 3 warnings; the focused regression script passed.
-- The run validates syntax and the checker's included regression cases. It does not execute the GIF decoder against a conformance corpus, compile the optional native video bridge, exercise the host-specific Lua scripts, or send a live AI provider request.
-
-
-## Additional parser and worker failure checks
-
-- GIF image descriptors that extend outside the logical screen are rejected instead of silently clipped. Decoded color indices that are absent from the selected global/local palette are rejected instead of silently leaving pixels transparent.
-- The Threaded AI polling coroutine now checks the retained lane's status. A lane ending in an error, cancellation, or kill state is surfaced as a worker error rather than waiting until the full request deadline.
-- These are source-level checks. The GIF decoder still needs a generated valid/malformed fixture corpus, and the AI worker lifecycle still needs integration testing with the exact Lua Lanes and HTTP module versions used by the target host.
-
-
-- Scoped the Threaded AI response-cache key by the active provider and model. A prompt cached under one backend/model can no longer be reused after switching to a different provider or rotating models.
-
-
-## Final CI check for the latest source commit
-
-- Commit `701f3a2` scopes Threaded AI cache entries by provider and model, in addition to the worker lifecycle and GIF parser validation updates in its parent commit.
-- GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011) completed successfully: all 15 tracked Lua files parsed, the analyzer fixture matched its expected 3 errors and 3 warnings, and the focused regression tests passed.
-- These checks do not execute MoonLoader runtime paths, GIF conformance fixtures, native video compilation, or live provider requests.
-
-
-## Threaded AI request selection audit
-
-- Captured the selected provider and model when each request is created, and passed that exact pair through endpoint, API-key, and request-body construction.
-- A delayed error now rotates a model only if the failed request still matches the currently selected provider and model. This prevents a late response from an earlier provider selection from changing the model list after the user has switched providers.
-- This is a source-level concurrency correction. Provider switching during a live request, timeout behavior, and actual provider responses still require a host test with private credentials.
-
-
-## Threaded AI provider error handling audit
-
-- Added a separate classification path for provider error payloads that do not contain a chat-completion content field. Recognized rate-limit, model-decommissioned, and model-not-found responses now reach the model-rotation logic instead of being reported only as generic JSON parse failures.
-- Error matching is case-insensitive and uses literal substring checks. Unknown response shapes remain visible as parse errors; this is not a complete provider-specific JSON error parser.
-- CI validates Lua syntax for this change. Live provider error responses have not been exercised in the target host.
-
-## Threaded AI provider error classifier tests
-
-- Extracted provider-error classification into a small pure-Lua module so it can be exercised without loading the MoonLoader host or making external API requests.
-- Added repeatable cases for rate-limit phrases/codes, decommissioned and missing models, missing OpenRouter endpoints, and an unrelated invalid-key error.
-- The module must be installed in `moonloader/lib` alongside the main script's documented dependencies. CI runs the classifier suite; live provider response behavior remains unverified.
-
-- Normalized classifier output is explicitly recognized by the model-rotation callback, so provider-specific missing-model and endpoint errors follow the same rotation path as rate limits.
+A successful syntax or unit-test run is useful evidence, but it does not replace integration testing in each project's actual runtime.
