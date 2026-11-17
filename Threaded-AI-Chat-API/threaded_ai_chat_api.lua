@@ -731,6 +731,7 @@ local function SendToServer(multi, cb)
                 and request_info.model == MODEL
             local lowerError = err_str:lower()
             local isModelAvailabilityError = lowerError:find("rate limit", 1, true)
+                or lowerError:find("model unavailable", 1, true)
                 or lowerError:find("rate_limit", 1, true)
                 or lowerError:find("decommissioned", 1, true)
                 or lowerError:find("model_not_found", 1, true)

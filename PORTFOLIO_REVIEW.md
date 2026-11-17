@@ -167,3 +167,5 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Extracted provider-error classification into a small pure-Lua module so it can be exercised without loading the MoonLoader host or making external API requests.
 - Added repeatable cases for rate-limit phrases/codes, decommissioned and missing models, missing OpenRouter endpoints, and an unrelated invalid-key error.
 - The module must be installed in `moonloader/lib` alongside the main script's documented dependencies. CI runs the classifier suite; live provider response behavior remains unverified.
+
+- Normalized classifier output is explicitly recognized by the model-rotation callback, so provider-specific missing-model and endpoint errors follow the same rotation path as rate limits.
