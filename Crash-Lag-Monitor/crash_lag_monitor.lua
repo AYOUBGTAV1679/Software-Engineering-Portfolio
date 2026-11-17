@@ -61,9 +61,15 @@ local WARN_COOLDOWN      = 20000  -- ms - don't repeat the same warning faster t
 local FPS_DROP_RATIO     = 0.5    -- warn if FPS falls below this fraction of its recent average
 local FPS_SAMPLE_WINDOW  = 10     -- how many recent FPS samples to average
 
-local lastWarnTime = {} -- [modelId] = os.clock() of last warning, to avoid spam
+local lastWarnTime = {} -- [modelId] = NowSeconds() of last warning, to avoid spam
 local fpsHistory    = {} -- rolling window of recent frame-time-derived FPS samples
-local lastFrameTime = os.clock()
+-- Game time advances independently of how much CPU time this script consumes.
+-- NowSeconds() is process CPU time and is not suitable for frame-interval timing.
+local function NowSeconds()
+    return getGameTimer() / 1000
+end
+
+local lastFrameTime = NowSeconds()
 local currentFPS    = 60
 
 -- FIX: a slow-moving baseline, separate from `currentFPS` (which is already the
@@ -119,37 +125,65 @@ local function ReadRecentLog(maxLines)
 end
 
 --------------------------------------------------------------
--- Count every currently-loaded vehicle, grouped by model ID.
--- Uses FindFirstVehicle/FindNextVehicle/EndFindVehicle - standard
--- CLEO-family natives for enumerating loaded vehicles, no external
--- library involved.
+-- Count vehicles in a bounded sphere around the local character.
+-- MoonLoader exposes findAllRandomVehiclesInSphere(pos, radius,
+-- findNext, passWrecked); the first call uses findNext=false and
+-- subsequent calls use true until the native reports no more cars.
 --------------------------------------------------------------
+local VEHICLE_SCAN_RADIUS = 250 -- world units around the local character
+local MAX_VEHICLES_PER_SCAN = 512
+
 local function CountVehiclesByModel()
     local counts = {}
-    local total  = 0
+    local total = 0
 
-    local ok, handle, veh = pcall(FindFirstVehicle)
-    if not ok or not handle or handle == -1 then
-        return counts, total
+    if type(getCharCoordinates) ~= "function"
+        or type(findAllRandomVehiclesInSphere) ~= "function"
+        or type(getCarModel) ~= "function" then
+        return counts, total, false
     end
 
-    local v = veh
-    while v do
-        local okModel, model = pcall(getCarModel, v)
-        if okModel and model then
+    local posOk, x, y, z = pcall(getCharCoordinates, PLAYER_PED)
+    if not posOk or type(x) ~= "number"
+        or type(y) ~= "number" or type(z) ~= "number" then
+        return counts, total, false
+    end
+
+    local findOk, found, vehicle = pcall(
+        findAllRandomVehiclesInSphere,
+        x, y, z, VEHICLE_SCAN_RADIUS, false, true
+    )
+    if not findOk then
+        return counts, total, false
+    end
+
+    local seen = {}
+    local scanned = 0
+    while found and vehicle and vehicle ~= -1
+        and scanned < MAX_VEHICLES_PER_SCAN do
+        -- A defensive duplicate guard prevents a broken iterator from
+        -- creating an endless loop inside a monitoring pass.
+        if seen[vehicle] then break end
+        seen[vehicle] = true
+        scanned = scanned + 1
+
+        local modelOk, model = pcall(getCarModel, vehicle)
+        if modelOk and type(model) == "number" then
             counts[model] = (counts[model] or 0) + 1
             total = total + 1
         end
 
-        local okNext, hasNext, nextVeh = pcall(FindNextVehicle, handle)
-        if not okNext or not hasNext then
-            break
+        local nextOk
+        nextOk, found, vehicle = pcall(
+            findAllRandomVehiclesInSphere,
+            x, y, z, VEHICLE_SCAN_RADIUS, true, true
+        )
+        if not nextOk then
+            return counts, total, false
         end
-        v = nextVeh
     end
 
-    pcall(EndFindVehicle, handle)
-    return counts, total
+    return counts, total, true
 end
 
 --------------------------------------------------------------
@@ -159,7 +193,7 @@ end
 -- windowed-average FPS.
 --------------------------------------------------------------
 local function UpdateFPS()
-    local now = os.clock()
+    local now = NowSeconds()
     local delta = now - lastFrameTime
     lastFrameTime = now
 
@@ -268,23 +302,28 @@ end
 --------------------------------------------------------------
 local function RegisterCommands()
     sampRegisterChatCommand("cgstatus", function()
-        local counts, total = CountVehiclesByModel()
+        local counts, total, scanAvailable = CountVehiclesByModel()
+        if not scanAvailable then
+            sampAddChatMessage("{FFAA00}[CrashGuard]{FFFFFF} Nearby vehicle scan is unavailable in this host build.", -1)
+            return
+        end
         local luaMemKB = collectgarbage("count")
 
-        sampAddChatMessage("{FFFF00}[CrashGuard]{FFFFFF} " .. total .. " vehicles loaded total. FPS: " ..
-            string.format("%.0f", currentFPS), -1)
+        sampAddChatMessage("{FFFF00}[CrashGuard]{FFFFFF} " .. total ..
+            " vehicles found within " .. VEHICLE_SCAN_RADIUS ..
+            " units. FPS: " .. string.format("%.0f", currentFPS), -1)
         sampAddChatMessage("{FFFFFF}  Lua memory: " .. string.format("%.1f", luaMemKB / 1024) .. " MB (small - this is not the streaming/engine memory).", -1)
 
         local shown = 0
         for model, count in pairs(counts) do
             if count >= 2 then
                 local color = (count >= WARN_THRESHOLD) and "{FF4444}" or "{FFFFFF}"
-                sampAddChatMessage(color .. "  Model " .. model .. ": " .. count .. " nearby", -1)
+                sampAddChatMessage(color .. "  Model " .. model .. ": " .. count .. " within scan radius", -1)
                 shown = shown + 1
             end
         end
         if shown == 0 then
-            sampAddChatMessage("{FFFFFF}  No model has 2+ copies loaded right now.", -1)
+            sampAddChatMessage("{FFFFFF}  No model has 2+ copies within the scan radius.", -1)
         end
     end)
 
@@ -358,10 +397,10 @@ function main()
         collectgarbage("setstepmul", 400)
     end)
 
-    local checkTimer = os.clock()
-    local gcTimer     = os.clock()
-    local watchdogTimer = os.clock()
-    lastFrameTime     = os.clock() -- reset here, not at script-load time,
+    local checkTimer = NowSeconds()
+    local gcTimer     = NowSeconds()
+    local watchdogTimer = NowSeconds()
+    lastFrameTime     = NowSeconds() -- reset here, not at script-load time,
                                      -- since isSampAvailable() can take a
                                      -- while and would otherwise skew the
                                      -- very first FPS sample
@@ -378,16 +417,17 @@ function main()
 
         if isSampAvailable() and monitoringOn.v then
             -- Vehicle-count early warning
-            if os.clock() - checkTimer > (CHECK_INTERVAL / 1000) then
-                checkTimer = os.clock()
+            if NowSeconds() - checkTimer > (CHECK_INTERVAL / 1000) then
+                checkTimer = NowSeconds()
 
                 pcall(function()
-                    local counts = CountVehiclesByModel()
+                    local counts, total, scanAvailable = CountVehiclesByModel()
+                    if not scanAvailable then return end
                     for model, count in pairs(counts) do
                         if count >= WARN_THRESHOLD then
                             local last = lastWarnTime[model] or 0
-                            if os.clock() - last > (WARN_COOLDOWN / 1000) then
-                                lastWarnTime[model] = os.clock()
+                            if NowSeconds() - last > (WARN_COOLDOWN / 1000) then
+                                lastWarnTime[model] = NowSeconds()
 
                                 -- Second signal: is FPS already noticeably
                                 -- down from its recent average? If so this
@@ -415,14 +455,14 @@ function main()
 
             -- Small incremental GC step (not a full collect - avoids
             -- a frame hitch) to keep Lua's own memory tidy.
-            if os.clock() - gcTimer > (GC_INTERVAL / 1000) then
-                gcTimer = os.clock()
+            if NowSeconds() - gcTimer > (GC_INTERVAL / 1000) then
+                gcTimer = NowSeconds()
                 collectgarbage("step", 200)
             end
 
             -- Watchdog: check moonloader.log for other scripts dying
-            if watchdogOn.v and os.clock() - watchdogTimer > 3 then
-                watchdogTimer = os.clock()
+            if watchdogOn.v and NowSeconds() - watchdogTimer > 3 then
+                watchdogTimer = NowSeconds()
                 pcall(CheckOtherScriptsHealth)
             end
         end
@@ -440,18 +480,18 @@ end
 -- scanning every CHECK_INTERVAL. The window now reads from a snapshot refreshed
 -- at most once per GUI_REFRESH_INTERVAL.
 local GUI_REFRESH_INTERVAL = 1.0
-local guiSnapshot = { time = -math.huge, models = {}, lines = {} }
+local guiSnapshot = { time = -math.huge, models = {}, lines = {}, scanAvailable = false }
 
 local function GetGuiSnapshot()
-    local now = os.clock()
+    local now = NowSeconds()
     if now - guiSnapshot.time < GUI_REFRESH_INTERVAL then
         return guiSnapshot
     end
     guiSnapshot.time = now
 
-    local okCounts, counts = pcall(CountVehiclesByModel)
+    local okCounts, counts, total, scanAvailable = pcall(CountVehiclesByModel)
     local models = {}
-    if okCounts and counts then
+    if okCounts and scanAvailable and counts then
         for model, count in pairs(counts) do
             if count >= 2 then
                 models[#models + 1] = { model = model, count = count }
@@ -463,6 +503,7 @@ local function GetGuiSnapshot()
         end)
     end
     guiSnapshot.models = models
+    guiSnapshot.scanAvailable = okCounts and scanAvailable == true
 
     local okLog, lines = pcall(ReadRecentLog, 10)
     guiSnapshot.lines = (okLog and lines) or {}
@@ -503,10 +544,12 @@ function imgui.OnDrawFrame()
         end
 
         imgui.Separator()
-        imgui.Text("Loaded vehicles by model:")
+        imgui.Text("Vehicles within " .. VEHICLE_SCAN_RADIUS .. " units by model:")
         imgui.BeginChild("VehicleCounts", imgui.ImVec2(0, 120), true)
-            if #snap.models == 0 then
-                imgui.TextDisabled("No model has 2+ copies loaded.")
+            if not snap.scanAvailable then
+                imgui.TextDisabled("Vehicle scan unavailable in this host build.")
+            elseif #snap.models == 0 then
+                imgui.TextDisabled("No model has 2+ copies within the scan radius.")
             else
                 for _, m in ipairs(snap.models) do
                     local color = (m.count >= WARN_THRESHOLD) and imgui.ImVec4(1.0, 0.3, 0.3, 1.0) or imgui.ImVec4(1.0, 1.0, 1.0, 1.0)

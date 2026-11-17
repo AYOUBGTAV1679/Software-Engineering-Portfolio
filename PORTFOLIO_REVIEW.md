@@ -41,3 +41,10 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 3. Launch the packaged Aegis application on a Windows device and verify startup, scanning, report export, and shutdown.
 4. Exercise provider selection with test credentials while keeping secrets out of the repository.
 5. Add generated GIF fixtures and native bridge build checks before describing the video path as supported.
+
+## Crash Guard API and timing audit
+
+- Replaced the project’s unsupported `FindFirstVehicle` / `FindNextVehicle` / `EndFindVehicle` enumeration calls. Those names are not present in the checked MoonLoader opcode reference. Vehicle counting now uses `findAllRandomVehiclesInSphere` around the local character, with a 250-unit radius, a duplicate guard, and a per-scan ceiling.
+- Replaced `os.clock()` for frame timing and periodic intervals with the host's `getGameTimer()`. Lua's `os.clock()` measures process CPU time; it is not a reliable wall-clock source for frame-to-frame intervals across calls to `wait(0)`.
+- Updated command/UI messaging and the README to state the actual scan radius. The script now reports when the vehicle scan API is unavailable rather than presenting an empty result as zero vehicles.
+- These changes are source-level corrections. They need MoonLoader runtime validation, especially the iterator behavior and its returned vehicle handles, before they can be considered verified in the target host.
