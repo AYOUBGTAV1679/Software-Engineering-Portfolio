@@ -4,7 +4,7 @@ Network Session Recorder captures selected client-observed RPC and packet data i
 
 ## Recording workflow
 
-Recording is started explicitly and can be paused and stopped. The script writes data incrementally and flushes its output periodically. Before a new recording begins, it caches selected initialization and connection data; it also embeds a snapshot of currently connected participants' display metadata so the recording is less dependent on state that may no longer be available later.
+Recording is started explicitly and can be paused and stopped. The script writes data incrementally and flushes its output periodically. Stopping moves the recorder into a finalization phase: the pending event queue is drained and the file is closed before another recording can start. This prevents two recorder workers from consuming the same shared queue when a new recording is started immediately after Stop. Before a new recording begins, it caches selected initialization and connection data; it also embeds a snapshot of currently connected participants' display metadata so the recording is less dependent on state that may no longer be available later.
 
 The hook layer handles selected incoming RPCs, incoming packets, and outgoing packet types. Data is serialized into the project's own recording representation and stored under the configured recording directory.
 
@@ -45,7 +45,7 @@ Playback can only reproduce information that was captured, serialized, and suppo
 - SAMPFUNCS and the packet/RPC hook functions used by the script
 - The host's ImGui integration
 
-Copy `network_session_recorder.lua` into the host's MoonLoader scripts directory. The script creates its working directory for recordings and settings when needed.
+Copy `network_session_recorder.lua` into the host's MoonLoader scripts directory. The script creates its working directory for recordings and settings when needed. Recording filename prefixes and nicknames are reduced to safe alphanumeric, underscore, and hyphen components, and a numeric suffix is added when a timestamp-based name already exists so a new session is not appended to an older recording.
 
 ## Data and limitations
 

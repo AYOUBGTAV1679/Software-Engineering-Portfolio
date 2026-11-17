@@ -83,6 +83,7 @@ local _ReadMe = "ReplayMod " .. _Version .. ". Activation: /rm. Original by kuzh
 local _MenuPage = 1
 --------------------------------------------------------------
 local _State = Mode.idle
+local _RecorderClosing = false -- prevents overlapping recorder workers during finalization
 local _LocalPlayerId = 1001
 --------------------------------------------------------------
 -- Recording-side state
@@ -432,6 +433,16 @@ end
 --------------------------------------------------------------
 Recorder = {
 	Start = function()
+		if _State ~= Mode.idle or _RecorderClosing then
+			Say("A recording is already active or still being finalized.")
+			return
+		end
+
+		-- Each recording owns a fresh queue and wait counter. Do not allow a
+		-- second worker to start until the previous file has been closed.
+		_DataQueue = {}
+		_Waiting = false
+		_WaitingIteration = 0
 		_State = Mode.record
 		_RecordStartTick = os.clock()
 		lua_thread.create(function()
@@ -440,6 +451,11 @@ Recorder = {
 
 			if not file then
 				Say("Could not create the recording file. Recording cancelled.")
+				_DataQueue = {}
+				_Waiting = false
+				_WaitingIteration = 0
+				_CurrentSaveName = nil
+				_CurrentFile = nil
 				_State = Mode.idle
 				return
 			end
@@ -531,10 +547,15 @@ Recorder = {
 				table.remove(_DataQueue, 1)
 			end
 			if _CurrentFile then
+				_CurrentFile:flush()
 				_CurrentFile:close()
 				_CurrentFile = nil
 			end
 			_DataQueue = {}
+			_Waiting = false
+			_WaitingIteration = 0
+			_RecorderClosing = false
+			Say(Translate.recordingstopped)
 		end)
 	end,
 
@@ -549,8 +570,13 @@ Recorder = {
 	end,
 
 	Stop = function()
-		_State = Mode.idle
-		Say(Translate.recordingstopped)
+		if _State == Mode.record or _State == Mode.paused then
+			-- The worker drains the pending queue and closes the file after its
+			-- current wait cycle. Block a new Start until that cleanup completes.
+			_State = Mode.idle
+			_RecorderClosing = true
+			Say("Finalizing recording and flushing remaining events...")
+		end
 	end,
 }
 
@@ -1543,9 +1569,27 @@ end
 
 function BoolToNum(b) return b and "1" or "0" end
 
+local function SafeFilePart(value, fallback)
+	local part = tostring(value or ""):gsub("[^%w_%-]", "_")
+	part = part:gsub("_+", "_"):sub(1, 40)
+	if part == "" then return fallback end
+	return part
+end
+
 function DeGenerateName(prefix)
-	if prefix == nil or prefix == "" then prefix = "Replay" end
-	return prefix .. "_" .. sampGetPlayerNickname(sampGetLocalPlayerId()) .. "_" .. tostring(os.date("%Y-%m-%d_%H-%M-%S")) .. ".replay"
+	local safePrefix = SafeFilePart(prefix, "Replay")
+	local safeNickname = SafeFilePart(sampGetPlayerNickname(sampGetLocalPlayerId()), "Player")
+	local base = safePrefix .. "_" .. safeNickname .. "_" .. tostring(os.date("%Y-%m-%d_%H-%M-%S"))
+	local directory = getGameDirectory() .. "/moonloader/ReplayMod/"
+	local candidate = base .. ".replay"
+	local suffix = 1
+	-- Avoid appending a new recording to an existing file when two starts
+	-- happen during the same timestamp second.
+	while doesFileExist(directory .. candidate) do
+		candidate = base .. "_" .. tostring(suffix) .. ".replay"
+		suffix = suffix + 1
+	end
+	return candidate
 end
 
 function sampGetLocalPlayerCarHealth()

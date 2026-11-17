@@ -63,3 +63,11 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Added an explicit integer player-ID guard for the supported scan/cache range (0–999). Invalid, fractional, negative, and out-of-range command values are rejected before host lookup or teleport functions are called.
 - When a connected player slot is observed with a different nickname, the prior cached entry for that slot is invalidated before refreshing its coordinates. This reduces the risk of replay navigation using coordinates associated with a previous visible occupant of the same ID.
 - The cache remains session-only and keyed by numeric player ID. Nickname comparison cannot prove identity when names are reused, and cached positions can still be stale. Runtime behavior still requires validation in the target host.
+
+
+## Network Session Recorder lifecycle and filename audit
+
+- Prevented overlapping recorder workers. Stop now enters a finalization phase; the active worker drains queued events, flushes and closes its file, then releases the closing guard. A new recording is rejected until this finishes, preventing two workers from consuming the shared event queue.
+- A new recording resets its queue and wait counters. File-open failure also clears the pending state so events collected during a failed start are not carried into a later recording.
+- Sanitized the user-configurable filename prefix and captured nickname before building a path. Existing timestamp collisions receive a numeric suffix instead of opening the previous recording in append mode.
+- These are source-level lifecycle and path-safety corrections. Packet/RPC capture and replay still require runtime testing in the target host; the changes do not validate replay compatibility across host versions.
