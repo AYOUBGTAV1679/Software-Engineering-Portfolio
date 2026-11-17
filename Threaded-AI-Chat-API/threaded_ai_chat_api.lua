@@ -638,7 +638,9 @@ local function ClassifyProviderError(raw)
     if lower:find("decommissioned", 1, true)
         or lower:find("model_not_found", 1, true)
         or lower:find("unknown model", 1, true)
-        or lower:find("model does not exist", 1, true) then
+        or lower:find("model does not exist", 1, true)
+        or lower:find("does not exist", 1, true)
+        or lower:find("no endpoints found for model", 1, true) then
         return "Model unavailable: provider rejected the selected model"
     end
     return nil
@@ -753,6 +755,8 @@ local function SendToServer(multi, cb)
                 or lowerError:find("model_not_found", 1, true)
                 or lowerError:find("unknown model", 1, true)
                 or lowerError:find("model does not exist", 1, true)
+                or lowerError:find("does not exist", 1, true)
+                or lowerError:find("no endpoints found for model", 1, true)
             if isModelAvailabilityError and selectionUnchanged then
                 local active_models = request_info.use_or and MODELS_OR or MODELS
                 model_idx = model_idx + 1
