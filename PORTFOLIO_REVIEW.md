@@ -137,3 +137,6 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - GIF image descriptors that extend outside the logical screen are rejected instead of silently clipped. Decoded color indices that are absent from the selected global/local palette are rejected instead of silently leaving pixels transparent.
 - The Threaded AI polling coroutine now checks the retained lane's status. A lane ending in an error, cancellation, or kill state is surfaced as a worker error rather than waiting until the full request deadline.
 - These are source-level checks. The GIF decoder still needs a generated valid/malformed fixture corpus, and the AI worker lifecycle still needs integration testing with the exact Lua Lanes and HTTP module versions used by the target host.
+
+
+- Scoped the Threaded AI response-cache key by the active provider and model. A prompt cached under one backend/model can no longer be reused after switching to a different provider or rotating models.

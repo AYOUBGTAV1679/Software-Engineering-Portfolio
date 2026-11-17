@@ -271,7 +271,9 @@ end
 -- CACHE
 --------------------------------------------------------------------------------
 local function CK(cmd, mode, text)
-    return cmd .. ":" .. mode .. ":" .. text:lower():gsub("%s+", " ")
+    -- Responses can differ by provider and model; keep their cache entries separate.
+    local provider = USE_OR and "openrouter" or "groq"
+    return provider .. ":" .. MODEL .. ":" .. cmd .. ":" .. mode .. ":" .. text:lower():gsub("%s+", " ")
 end
 
 local function CGe(k) return cache[k] end

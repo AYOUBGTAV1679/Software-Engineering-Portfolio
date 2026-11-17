@@ -17,7 +17,7 @@ The script moves HTTP work into a worker created through the `lanes` threading l
 - Background HTTP requests so network waits do not run directly in the main script loop.
 - Character/context configuration and a bounded conversation context.
 - Local history, saved replies, and reusable knowledge-base entries.
-- A bounded response cache for repeated prompts.
+- A bounded response cache for repeated prompts, scoped by provider and model so results from different backends are not mixed.
 - Manual provider selection between Groq and OpenRouter.
 - Model rotation within the selected provider after recognized rate-limit or model-availability errors.
 - UI windows and commands for chat, character settings, knowledge bases, saved replies, and history.
