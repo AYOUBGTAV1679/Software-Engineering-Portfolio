@@ -42,8 +42,8 @@ end
 
 check("successful write", function()
 	local file = fakeFile()
-	assert(fileIO.write(file, "event\\n"))
-	assert(file.writes[1] == "event\\n")
+	assert(fileIO.write(file, "event-data"))
+	assert(file.writes[1] == "event-data")
 end)
 
 check("reported write error", function()

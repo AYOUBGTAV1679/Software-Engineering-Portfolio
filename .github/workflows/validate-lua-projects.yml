@@ -55,7 +55,7 @@ jobs:
           )
 
           if [ "${#lua_files[@]}" -ne 21 ]; then
-            printf 'Expected 19 Lua files, found %s\n' "${#lua_files[@]}"
+            printf 'Expected 21 Lua files, found %s\n' "${#lua_files[@]}"
             exit 1
           fi
 

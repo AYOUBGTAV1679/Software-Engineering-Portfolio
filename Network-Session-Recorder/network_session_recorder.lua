@@ -470,13 +470,13 @@ Recorder = {
 				-- Write the cached world-init snapshot FIRST so this recording
 				-- is self-contained no matter when in the session it started.
 				if _CachedInitGame then
-					AddDataToSaveFile(file, PacketTag.RPC .. _CachedInitGame .. "\\n")
+					AddDataToSaveFile(file, PacketTag.RPC .. _CachedInitGame .. "\n")
 				end
 				if _CachedConnectId then
-					AddDataToSaveFile(file, PacketTag.RPC .. _CachedConnectId .. "\\n")
+					AddDataToSaveFile(file, PacketTag.RPC .. _CachedConnectId .. "\n")
 				end
 				if _CachedFFLine then
-					AddDataToSaveFile(file, PacketTag.RPC .. _CachedFFLine .. "\\n")
+					AddDataToSaveFile(file, PacketTag.RPC .. _CachedFFLine .. "\n")
 				end
 
 				-- Embed a snapshot of currently connected participants.
@@ -494,7 +494,7 @@ Recorder = {
 							end
 							if nick and nick ~= "" and ok and color then
 								AddDataToSaveFile(file, PacketTag.ColorInfo .. nick .. "=" ..
-									string.format("%08X", color) .. ":" .. tostring(skin) .. "\\n")
+									string.format("%08X", color) .. ":" .. tostring(skin) .. "\n")
 							end
 						end
 					end
@@ -511,10 +511,10 @@ Recorder = {
 							if _DataQueue[1] ~= nil then
 								if _Waiting then
 									_Waiting = false
-									AddDataToSaveFile(file, PacketTag.Waiting .. tostring(_WaitingIteration) .. "\\n")
+									AddDataToSaveFile(file, PacketTag.Waiting .. tostring(_WaitingIteration) .. "\n")
 									_WaitingIteration = 0
 								end
-								AddDataToSaveFile(file, _DataQueue[1] .. "\\n")
+								AddDataToSaveFile(file, _DataQueue[1] .. "\n")
 								table.remove(_DataQueue, 1)
 							else
 								_Waiting = true
@@ -539,14 +539,14 @@ Recorder = {
 				while _DataQueue[1] ~= nil do
 					if _Waiting then
 						_Waiting = false
-						AddDataToSaveFile(file, PacketTag.Waiting .. tostring(_WaitingIteration) .. "\\n")
+						AddDataToSaveFile(file, PacketTag.Waiting .. tostring(_WaitingIteration) .. "\n")
 						_WaitingIteration = 0
 					end
-					AddDataToSaveFile(file, _DataQueue[1] .. "\\n")
+					AddDataToSaveFile(file, _DataQueue[1] .. "\n")
 					table.remove(_DataQueue, 1)
 				end
 				if _Waiting then
-					AddDataToSaveFile(file, PacketTag.Waiting .. tostring(_WaitingIteration) .. "\\n")
+					AddDataToSaveFile(file, PacketTag.Waiting .. tostring(_WaitingIteration) .. "\n")
 					_Waiting = false
 					_WaitingIteration = 0
 				end
