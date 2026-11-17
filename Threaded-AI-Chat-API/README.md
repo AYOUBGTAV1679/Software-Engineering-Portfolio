@@ -34,7 +34,7 @@ local API_KEY = "YOUR_GROQ_KEY_HERE"
 local API_KEY_OR = ""
 ```
 
-Replace the placeholders in a local working copy only. Do not commit real API keys or publish a populated copy of the script. The default provider is Groq. Use `/jrpor or` to select OpenRouter after configuring its key, or `/jrpor groq` to return to Groq.
+Replace the placeholders in a local working copy only. Do not commit real API keys or publish a populated copy of the script. The default provider is Groq. If `USE_OR` is enabled directly in the configuration, the initial model is selected from the OpenRouter model list; otherwise the initial model comes from Groq. At runtime, use `/jrpor or` to select OpenRouter after configuring its key, or `/jrpor groq` to return to Groq.
 
 The script requires a valid key for the selected provider, the selected model to remain available, and network access to the service.
 

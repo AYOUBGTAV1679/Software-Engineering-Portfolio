@@ -54,7 +54,7 @@ local MODELS_OR = {
     "google/gemma-2-9b-it:free",
     "mistralai/mistral-7b-instruct:free",
 }
-local MODEL     = MODELS[1]
+local MODEL     = USE_OR and MODELS_OR[1] or MODELS[1]
 local model_idx = 1
 local TIMEOUT = 15
 
