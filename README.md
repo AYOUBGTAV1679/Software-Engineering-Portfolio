@@ -21,9 +21,13 @@ The project descriptions above are an index of the work intended for this portfo
 
 ## Current repository contents
 
-Aegis v0.8.2 is the first complete project source tree published in this repository. It includes the Python package, command-line and GUI entry points, analysis rules, sample Lua files, and a dedicated test suite. Its Windows packaging workflow is configured to run the tests and build a standalone application. The current build result and any downloadable artifact must be checked in the [GitHub Actions history](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions); the presence of a workflow does not by itself mean that a tested executable has been released.
+All eight projects are published as separate source directories with project-level documentation. The seven Lua-based projects retain their own source files and setup notes. Aegis is a separate Python application with CLI and GUI entry points, a test suite, sample Lua files, and a Windows packaging workflow.
 
-The seven additional projects are now available as separate source directories. Each folder retains its project identity and includes the source files and a README describing implemented behavior, setup, validation, and known limitations. The portfolio-level [review note](PORTFOLIO_REVIEW.md) records static checks and distinguishes syntax validation from host-specific runtime testing. A dedicated [Lua validation workflow](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44066484765) parses all 14 Lua files and checks the bundled analyzer fixture.
+The latest recorded successful Aegis Windows run ([#43928542059](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/43928542059)) ran **206 tests**, completed the PyInstaller build, and packaged the application as `Aegis-Windows-x64.zip`. GitHub Actions reports an artifact size of about **270 MB**, available through **14 February 2027**. This confirms CI testing and packaging; it does not confirm that the GUI has been smoke-tested on a user's Windows device.
+
+For the seven Lua projects, the [Lua validation run](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44066484765) parsed all **14 tracked Lua files** with Lua 5.4 and checked the Lua Code Checker sample fixture against its expected output. These checks confirm syntax under Lua 5.4 and the fixture result only. They do not verify MoonLoader integrations or runtime behavior in each project's target environment.
+
+The [portfolio review](PORTFOLIO_REVIEW.md) records completed checks, unresolved integration issues, and the next validation priorities. Check the [GitHub Actions history](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions) for the latest run state and artifact availability.
 
 ## How to review a project
 

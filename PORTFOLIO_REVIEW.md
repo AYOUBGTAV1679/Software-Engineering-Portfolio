@@ -27,3 +27,17 @@ This note records the checks performed on the seven project sources in this bund
 - Behavior against every supported host/client version or all possible input assets and recordings.
 
 A syntax pass does not establish runtime correctness. The documented dependencies and limitations remain part of each project's setup and evaluation criteria.
+
+## Follow-up API and build audit
+
+- **Zeno Skin Changer:** a source-level API audit found calls to `loadTxdDictionary`, `loadModelInfo`, and `setCharAnimationFreezeLastFrame` without definitions or declared imports in this project. The referenced MoonLoader opcode list documents `loadTextureDictionary` and `taskPlayAnim`, rather than those called names. The custom model and walk-style paths therefore remain blocked on a supported API mapping or a documented extension and a test in the target host. See the project README for the exact limitation.
+- **Aegis Windows package:** run [#43928542059](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/43928542059) passed **206 tests**, built `dist/Aegis/Aegis.exe`, and uploaded `Aegis-Windows-x64.zip` (269,855,143 bytes). PyInstaller emitted Qt-related collection warnings during the successful build. The workflow did not launch the GUI for a smoke test on a separate Windows device.
+- **Threaded AI Chat API:** the source now resolves the endpoint and API key together from the selected provider. No live Groq or OpenRouter request has been verified, because no live credentials were used.
+
+## Next validation priorities
+
+1. Resolve the undocumented native calls in Zeno Skin Changer before claiming custom model or animation functionality is operational.
+2. Run each MoonLoader project in its supported host and record reproducible smoke-test steps and results.
+3. Launch the packaged Aegis application on a Windows device and verify startup, scanning, report export, and shutdown.
+4. Exercise provider selection with test credentials while keeping secrets out of the repository.
+5. Add generated GIF fixtures and native bridge build checks before describing the video path as supported.

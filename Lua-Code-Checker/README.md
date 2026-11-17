@@ -48,7 +48,7 @@ Run the included sample with:
 lua lua_code_checker.lua tests/sample_bad.lua
 ```
 
-The README supplied with this project records an expected result of three errors and two warnings for that fixture. The repository does not currently include an automated test runner that executes the entire comparison corpus, so treat that historical comparison as a development note rather than a continuously enforced CI result.
+The GitHub Actions workflow runs this fixture with Lua 5.4, expects exit code `1` because the findings are intentional, and checks the exact summary: `3 error(s), 2 warning(s), 0 info`. This is a continuously enforced regression check for this single fixture. It is not a comprehensive comparison corpus and does not establish overall analyzer accuracy.
 
 ## Project layout
 

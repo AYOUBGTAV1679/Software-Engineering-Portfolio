@@ -64,6 +64,12 @@ Personal settings and temporary assignments have different lifetimes: personal c
 
 Copy `model_loader_3d.lua` into the host's MoonLoader scripts directory, start the host, and open the interface with `/zskin`.
 
+## Unresolved host API dependencies
+
+The current source calls `loadTxdDictionary`, `loadModelInfo`, and `setCharAnimationFreezeLastFrame`, but does not define or import those names in this project. The [MoonLoader opcode reference](https://github.com/v3sp4n/Lua/blob/master/moonloader_reference.txt) documents `loadTextureDictionary` for loading a TXD dictionary and `taskPlayAnim` for playing a character animation; it does not list the three names currently called by the source. The source also passes an absolute file path to `requestAnimation`, so that argument still needs verification against the target host.
+
+Until these calls are mapped to supported host functions or a declared extension, custom DFF/TXD loading and walk-style application must be treated as unverified. The current Lua CI check proves that the file parses; it does not prove that these global functions exist at runtime.
+
 ## Limitations
 
-The script depends on host-provided native functions for model, texture, animation, and participant operations. Compatibility varies by host build and installed extensions. The source repository does not include a standalone runtime or a test harness capable of validating custom assets against every supported client build. Treat custom asset compatibility as something to verify in the target environment.
+The script depends on host-provided functions for model, texture, animation, and participant operations. Compatibility varies by host build and installed extensions. The source repository does not include a standalone runtime or a test harness capable of validating custom assets against every supported client build. Treat custom asset compatibility as something to verify in the target environment.
