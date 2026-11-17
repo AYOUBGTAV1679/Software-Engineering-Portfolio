@@ -203,6 +203,17 @@ local SKIN_NAMES = {
 local CUSTOM_SKINS = {
 }
 
+-- All imported DFF assets currently share this internal runtime slot.
+-- The user's configured ID remains the logical ID stored in settings.
+local CUSTOM_SKIN_SLOT = 7
+
+local function GetRuntimeSkinModelId(skinId)
+    if CUSTOM_SKINS[skinId] then
+        return CUSTOM_SKIN_SLOT
+    end
+    return skinId
+end
+
 --------------------------------------------------------------
 -- FILE: read extra skins from moonloader/zskin_skins.ini
 -- FROM: _RM__PlayStable.lua LoadSave pattern lines 556-563
@@ -578,8 +589,8 @@ local function ApplySkin(entry)
             return
         end
 
-        -- Use slot 7 (MALE01) as the internal base slot for custom models.
-        local slot = 7
+        -- Use one internal slot for imported custom DFF assets.
+        local slot = CUSTOM_SKIN_SLOT
 
         if c.txd then
             local fullTxd = c.fullPath and c.txd or (getGameDirectory() .. "/" .. c.txd)
@@ -1054,7 +1065,11 @@ function main()
             -- Re-apply your own permanent skin if it drifted (respawn, etc.)
             if mySkin then
                 pcall(function()
-                    if doesCharExist(PLAYER_PED) and getCharModel(PLAYER_PED) ~= mySkin then
+                    local customEntry = CUSTOM_SKINS[mySkin]
+                    local customLoaderMissing = customEntry and customEntry.dff
+                        and type(loadModelInfo) ~= "function"
+                    if not customLoaderMissing and doesCharExist(PLAYER_PED)
+                        and getCharModel(PLAYER_PED) ~= GetRuntimeSkinModelId(mySkin) then
                         ApplySkin({ id = mySkin, name = SKIN_NAMES[mySkin] or ("ID " .. mySkin) })
                     end
                 end)

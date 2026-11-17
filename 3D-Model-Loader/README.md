@@ -51,7 +51,7 @@ The configured walk styles use the host's `ped` animation block. No external `pe
 
 ## Engineering notes
 
-The implementation separates the logical model ID from the internal model slot used while preparing a custom asset. Loading is processed through a pending-state path with a timeout rather than relying on an unbounded blocking wait. Binary model and texture files are opened in binary mode before their sizes are checked.
+The implementation separates the logical model ID shown and saved in settings from the internal runtime slot used for a custom DFF. Reapplication compares the character's actual runtime model ID with that slot, avoiding repeated reload attempts caused by comparing two different identifiers. Loading is processed through a pending-state path with a timeout rather than relying on an unbounded blocking wait. Binary model and texture files are opened in binary mode before their sizes are checked.
 
 Personal settings and temporary assignments have different lifetimes: personal choices and the hotkey are stored locally, while nickname-based assignments remain in memory for the current session. These overrides are local presentation behavior; they do not modify server-side records or another user's files.
 
