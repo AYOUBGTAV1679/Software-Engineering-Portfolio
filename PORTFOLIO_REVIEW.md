@@ -103,3 +103,10 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 
 
 - Added defensive handling for the experimental video bridge: null native handles are rejected, and invalid or oversized dimensions are closed and rejected before the Lua side allocates a raw RGBA frame buffer. The bridge remains uncompiled and untested; this guard is not evidence that video playback works.
+
+
+## Latest repository-wide Lua CI result
+
+- Workflow run [#44116518796](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44116518796) completed successfully on the current source commit before this documentation-only refresh.
+- The workflow parsed all 15 tracked Lua source/test files with Lua 5.4, checked the fixture's expected **3 errors, 3 warnings, 0 info** output, and ran the Lua Code Checker regression tests.
+- The run confirms Lua syntax and these focused regression assertions. It does not exercise the MoonLoader runtime, decode a generated GIF corpus, compile the FFmpeg bridge, or make a live provider request.
