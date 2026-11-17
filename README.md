@@ -15,7 +15,7 @@ This repository is intended as a general technical portfolio. It is not tailored
 | Network-Session-Recorder | Session capture, binary storage, and playback | Not published here yet |
 | Scoreboard-GIF-Decoder | Scoreboard interface and GIF/LZW decoding | Not published here yet |
 | Threaded-AI-Chat-API | Non-blocking AI API requests from a cooperative scripting host | Not published here yet |
-| [Lua-Malware-Scanner — Aegis](Lua-Malware-Scanner/README.md) | Static analysis of Lua scripts, evidence-based findings, deobfuscation, and safe-copy sanitization | Source published; Windows build validation in progress |
+| [Lua-Malware-Scanner — Aegis](Lua-Malware-Scanner/README.md) | Static analysis of Lua scripts, evidence-based findings, deobfuscation, and safe-copy sanitization | Source published; CI tests and Windows packaging build passed; device runtime not independently verified |
 
 The project descriptions above are an index of the work intended for this portfolio. A project is not considered submitted or reviewable until its source is present and its own documentation explains what is actually implemented.
 
@@ -41,4 +41,4 @@ Each project README should make it possible to understand the work without relyi
 
 The portfolio avoids unsupported performance claims, inflated feature descriptions, and claims of production readiness without evidence. Test results must identify the test set and environment; benchmark results must not be presented as universal real-world accuracy. Optional integrations must be identified as optional, and anything that has not been tested against a live service should be described accordingly.
 
-The projects target different runtimes and environments. For example, MoonLoader scripts require a compatible GTA: San Andreas multiplayer client and supporting components. Aegis and Lua Code Checker are separate tools with their own runtime requirements.
+The projects target different runtimes and environments. MoonLoader-based scripts require a compatible host runtime and supporting components. Aegis and Lua Code Checker are separate tools with their own runtime requirements.
