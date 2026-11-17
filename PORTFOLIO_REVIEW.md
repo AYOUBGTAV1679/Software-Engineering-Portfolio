@@ -14,10 +14,10 @@ This note records the checks performed on the seven project sources in this bund
 
 ## Verification performed
 
-- Parsed all 14 Lua source/fixture files in the seven projects with the installed Lua 5.4 shared library: **14 passed, 0 syntax errors**.
-- Executed Lua Code Checker's included `tests/sample_bad.lua` fixture with the bundled checker: **3 errors and 2 warnings**, matching the fixture's documented expected output.
+- Parsed all 14 Lua source/fixture files in the seven projects locally with Lua 5.4: **14 passed, 0 syntax errors**. The same check is now enforced by the repository's GitHub Actions workflow.
+- Executed Lua Code Checker's included `tests/sample_bad.lua` fixture with the bundled checker: **3 errors and 2 warnings**, matching the fixture's expected output. The CI job checks both the expected exit code and the exact summary.
 - Ran the checker across the 14 Lua files: it reported the intentional findings in `sample_bad.lua` plus heuristic warnings in some project files. These warnings need manual review; the checker is pattern-based and does not establish that each warning is a defect.
-- Verified that the source archive can be recreated and read back as a ZIP without a CRC error.
+- Added `.github/workflows/validate-lua-projects.yml` to parse all 14 Lua files and validate the analyzer fixture on pushes and pull requests. GitHub Actions run [#44066484765](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44066484765) completed successfully.
 
 ## Not verified in this environment
 

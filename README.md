@@ -8,13 +8,13 @@ This repository is intended as a general technical portfolio. It is not tailored
 
 | Project | Area | Repository status |
 |---|---|---|
-| 3D-Model-Loader | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls | Source published; runtime validation pending |
-| Crash-Lag-Monitor | Crash Guard — performance monitoring and log diagnostics | Source published; runtime validation pending |
-| Lua-Code-Checker | Static checks and conservative automatic fixes for Lua | Source published; runtime validation pending |
-| Coordinate-Lookup-Tool | Position lookup and handling of protected multi-value returns | Source published; runtime validation pending |
-| Network-Session-Recorder | Session capture, binary storage, and playback | Source published; runtime validation pending |
-| Scoreboard-GIF-Decoder | Scoreboard interface and GIF/LZW decoding | Source published; runtime validation pending |
-| Threaded-AI-Chat-API | Non-blocking AI API requests from a cooperative scripting host | Source published; runtime validation pending |
+| 3D-Model-Loader | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls | Source published; Lua 5.4 CI passed; runtime validation pending |
+| Crash-Lag-Monitor | Crash Guard — performance monitoring and log diagnostics | Source published; Lua 5.4 CI passed; runtime validation pending |
+| Lua-Code-Checker | Static checks and conservative automatic fixes for Lua | Source published; Lua 5.4 CI passed; runtime validation pending |
+| Coordinate-Lookup-Tool | Position lookup and handling of protected multi-value returns | Source published; Lua 5.4 CI passed; runtime validation pending |
+| Network-Session-Recorder | Session capture, binary storage, and playback | Source published; Lua 5.4 CI passed; runtime validation pending |
+| Scoreboard-GIF-Decoder | Scoreboard interface and GIF/LZW decoding | Source published; Lua 5.4 CI passed; runtime validation pending |
+| Threaded-AI-Chat-API | Non-blocking AI API requests from a cooperative scripting host | Source published; Lua 5.4 CI passed; runtime validation pending |
 | [Lua-Malware-Scanner — Aegis](Lua-Malware-Scanner/README.md) | Static analysis of Lua scripts, evidence-based findings, deobfuscation, and safe-copy sanitization | Source published; CI tests and Windows packaging build passed; device runtime not independently verified |
 
 The project descriptions above are an index of the work intended for this portfolio. A project is not considered submitted or reviewable until its source is present and its own documentation explains what is actually implemented.
@@ -23,7 +23,7 @@ The project descriptions above are an index of the work intended for this portfo
 
 Aegis v0.8.2 is the first complete project source tree published in this repository. It includes the Python package, command-line and GUI entry points, analysis rules, sample Lua files, and a dedicated test suite. Its Windows packaging workflow is configured to run the tests and build a standalone application. The current build result and any downloadable artifact must be checked in the [GitHub Actions history](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions); the presence of a workflow does not by itself mean that a tested executable has been released.
 
-The seven additional projects are now available as separate source directories. Each folder retains its project identity and includes the source files and a README describing implemented behavior, setup, validation, and known limitations. The portfolio-level [review note](PORTFOLIO_REVIEW.md) records static checks and distinguishes syntax validation from host-specific runtime testing.
+The seven additional projects are now available as separate source directories. Each folder retains its project identity and includes the source files and a README describing implemented behavior, setup, validation, and known limitations. The portfolio-level [review note](PORTFOLIO_REVIEW.md) records static checks and distinguishes syntax validation from host-specific runtime testing. A dedicated [Lua validation workflow](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44066484765) parses all 14 Lua files and checks the bundled analyzer fixture.
 
 ## How to review a project
 
