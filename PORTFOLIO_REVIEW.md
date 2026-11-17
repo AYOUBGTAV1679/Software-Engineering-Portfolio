@@ -4,14 +4,15 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44161711099](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44161711099), completed successfully on commit `fcd57f1b8c07f2895ac4420080b29b080f3cf117`.
+The latest Lua validation run, [GitHub Actions #44162811898](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44162811898), completed successfully on commit `30620e1c46a4c9e02c4e062bbe5c6af9fc925128`.
 
 The workflow:
-- Parsed all **21 tracked Lua files** across the seven Lua projects with Lua 5.4.
+- Parsed all **23 tracked Lua files** across the seven Lua projects with Lua 5.4.
 - Checked the Lua Code Checker fixture against its expected result: **3 errors, 3 warnings, 0 info**.
 - Ran the Lua Code Checker regression tests for module allowlisting and escaped-newline line tracking.
 - Ran **13 generated GIF decoder regression cases**, covering valid GIF87a/GIF89a samples and malformed-input boundaries.
 - Ran **7 provider-error classifier cases**, including rate-limit and missing-model responses plus an unrelated invalid-key response.
+- Ran **5 AI prefetch epoch regression cases**, checking that reset or newer-request tokens invalidate older callbacks.
 - Ran **9 Network Session Recorder file-I/O regression cases**, including reported/thrown write failures and cleanup after flush/close errors.
 
 The Aegis Windows packaging workflow previously completed [run #43928542059](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/43928542059) with **206 tests**, a PyInstaller build, and an uploaded `Aegis-Windows-x64.zip` package of 269,855,143 bytes. This is CI build and test evidence; it is not a GUI smoke test on a separate Windows device.
@@ -50,9 +51,9 @@ Installation note: the scoreboard script requires `gif_decoder_core.lua` in the 
 
 HTTP requests run in Lua Lanes workers, and the main coroutine polls for a result. The request captures its provider, model, endpoint, and API key at creation so a provider switch during an in-flight request does not redirect it. Delayed model errors only rotate the active model when the failed request still matches the current provider/model selection.
 
-Provider error classification is isolated in `provider_error_classifier.lua` and covered by seven pure-Lua regression cases. Recognized rate-limit and unavailable-model payloads are normalized before reaching model rotation. The script deliberately requests lane cancellation on timeout without force-killing a worker; cancellation may not interrupt a worker blocked in a native or network call.
+Provider error classification is isolated in `provider_error_classifier.lua` and covered by seven pure-Lua regression cases. Recognized rate-limit and unavailable-model payloads are normalized before reaching model rotation. Prefetch callbacks now carry generation tokens: resetting the current context or accepting a cache hit invalidates previous tokens, and the five-case helper suite checks that stale callbacks are rejected. This isolates the freshness guard but does not simulate the full MoonLoader event loop. The script deliberately requests lane cancellation on timeout without force-killing a worker; cancellation may not interrupt a worker blocked in a native or network call.
 
-No live Groq or OpenRouter request has been verified. The exact Lua Lanes and HTTP module versions in the target host also need compatibility testing. Installation note: copy `provider_error_classifier.lua` into `moonloader/lib` alongside the other documented dependencies. Do not commit real API keys.
+No live Groq or OpenRouter request has been verified. The exact Lua Lanes and HTTP module versions in the target host also need compatibility testing. Installation note: copy `provider_error_classifier.lua` and `prefetch_epoch.lua` into `moonloader/lib` alongside the other documented dependencies. Do not commit real API keys.
 
 ### Lua Malware Scanner — Aegis
 
