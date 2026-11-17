@@ -87,3 +87,10 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Moved the requests module load inside the worker's protected call. A missing HTTP dependency now travels back as an error result instead of terminating the lane without notifying its caller.
 - Protected Linda/channel and worker creation. Setup failures are placed into the request result queue so the UI can surface an actionable error.
 - This does not forcibly cancel a running HTTP call after its deadline, and no live provider request has been verified. The script still requires real credentials and the documented host dependencies.
+
+
+## Network Session Recorder timing and write-buffer audit
+
+- Removed the per-record flush from the queue writer. The writer now buffers sequential writes and flushes on a five-second elapsed-time schedule, followed by a final flush at close, avoiding a disk flush for every captured event.
+- Replaced process-CPU-time measurements for recording duration and periodic flush checks with the host game timer (milliseconds), falling back to system time at one-second resolution. This makes the displayed duration and five-second flush interval track elapsed time while the script yields.
+- The recorder still needs host runtime testing under sustained packet load and forced file-write failures. The CI Lua parser does not exercise disk throughput or native hooks.

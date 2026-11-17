@@ -189,6 +189,15 @@ function Say(msg)
 	end
 end
 
+-- Use elapsed host time rather than os.clock(), which measures CPU usage.
+local function RecorderClockMs()
+	if type(getGameTimer) == "function" then
+		local ok, value = pcall(getGameTimer)
+		if ok and type(value) == "number" then return value end
+	end
+	return os.time() * 1000
+end
+
 --------------------------------------------------------------
 -- main
 --------------------------------------------------------------
@@ -283,7 +292,7 @@ function main()
 
 		if Settings.overlayEnabled.v then
 			if _State == Mode.record then
-				renderFontDrawText(font, "{REC} " .. FormatElapsed(os.clock() - _RecordStartTick), scrx - 170, 0, 0xFFFF1E1E)
+				renderFontDrawText(font, "{REC} " .. FormatElapsed((RecorderClockMs() - _RecordStartTick) / 1000), scrx - 170, 0, 0xFFFF1E1E)
 			elseif _State == Mode.paused then
 				renderFontDrawText(font, "{PAUSED}", scrx - 170, 0, 0xFFFFAA00)
 			elseif _State == Mode.replay then
@@ -444,7 +453,7 @@ Recorder = {
 		_Waiting = false
 		_WaitingIteration = 0
 		_State = Mode.record
-		_RecordStartTick = os.clock()
+		_RecordStartTick = RecorderClockMs()
 		lua_thread.create(function()
 			local SaveName = DeGenerateName(Settings.customNamePrefix.v)
 			local file = io.open(getGameDirectory() .. "/moonloader/ReplayMod/" .. SaveName, "a")
@@ -504,7 +513,7 @@ Recorder = {
 
 			Say(Translate.recordingstarted .. " " .. SaveName)
 
-			local lastFlush = os.clock()
+			local lastFlush = RecorderClockMs()
 
 			while _State == Mode.record or _State == Mode.paused do
 				wait(10)
@@ -530,8 +539,9 @@ Recorder = {
 					-- unexpected exit mid-session only loses a few seconds
 					-- of unflushed data instead of a potentially large
 					-- buffered chunk that was never written.
-					if os.clock() - lastFlush > 5 then
-						lastFlush = os.clock()
+					local nowMs = RecorderClockMs()
+					if nowMs - lastFlush >= 5000 then
+						lastFlush = nowMs
 						pcall(function() file:flush() end)
 					end
 				end
@@ -1434,8 +1444,9 @@ function AddDataToQueue(SerializedString, ModeTag)
 end
 
 function AddDataToSaveFile(SaveHandle, Data)
+	-- Writes are buffered; the recorder flushes on a wall-clock schedule and
+	-- performs one final flush before closing the file.
 	SaveHandle:write(Data)
-	SaveHandle:flush()
 end
 
 function LoadSave(LoadPath)
