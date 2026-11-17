@@ -4,14 +4,15 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44123235278](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44123235278), completed successfully on commit `8b7e453282a2c7e9954ea4e35d6aa268bc72cff3`.
+The latest Lua validation run, [GitHub Actions #44161711099](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44161711099), completed successfully on commit `fcd57f1b8c07f2895ac4420080b29b080f3cf117`.
 
 The workflow:
-- Parsed all **19 tracked Lua files** across the seven Lua projects with Lua 5.4.
+- Parsed all **21 tracked Lua files** across the seven Lua projects with Lua 5.4.
 - Checked the Lua Code Checker fixture against its expected result: **3 errors, 3 warnings, 0 info**.
 - Ran the Lua Code Checker regression tests for module allowlisting and escaped-newline line tracking.
 - Ran **13 generated GIF decoder regression cases**, covering valid GIF87a/GIF89a samples and malformed-input boundaries.
 - Ran **7 provider-error classifier cases**, including rate-limit and missing-model responses plus an unrelated invalid-key response.
+- Ran **9 Network Session Recorder file-I/O regression cases**, including reported/thrown write failures and cleanup after flush/close errors.
 
 The Aegis Windows packaging workflow previously completed [run #43928542059](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/43928542059) with **206 tests**, a PyInstaller build, and an uploaded `Aegis-Windows-x64.zip` package of 269,855,143 bytes. This is CI build and test evidence; it is not a GUI smoke test on a separate Windows device.
 
@@ -35,7 +36,7 @@ Player IDs are checked as integers in the supported **0–999** range before hos
 
 ### Network Session Recorder
 
-The recorder prevents overlapping recording workers during stop/finalization, drains the pending queue before closing, resets queue state at the next start, and sanitizes user-controlled filename parts. File writes are buffered with periodic flushing and a final flush at close. Packet/RPC capture, replay compatibility, sustained packet load, and forced disk-write failures still need tests in the target host.
+The recorder prevents overlapping workers during stop/finalization, drains the pending queue before closing, resets queue state at the next start, and sanitizes user-controlled filename parts. The final quiet interval is now written as a trailing wait record. Checked file operations detect write and periodic-flush failures; the worker uses a protected cleanup path, and finalization attempts close even when flush fails. The pure-Lua helper suite passed 9 controlled fake-handle cases. This is not a real disk-full test: packet/RPC capture, replay compatibility, sustained traffic, and actual disk failure behavior still need validation in the target host.
 
 ### Scoreboard GIF Decoder
 
