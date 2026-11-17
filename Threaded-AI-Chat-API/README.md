@@ -1,0 +1,76 @@
+# RP Respond AI — Threaded Chat API Integration
+
+RP Respond AI connects a Lua client script to a remote language-model API and presents generated responses through a chat-oriented interface. Its central engineering constraint is that the host script loop is cooperative: waiting for a network response in that loop would delay UI and runtime updates.
+
+The script moves HTTP work into a worker created through the `lanes` threading library. Results are returned through a thread-safe Linda channel and polled by the main script, which handles the UI update after the response is ready.
+
+## Request flow
+
+1. The main script builds a prompt from the current interaction, character settings, and recent context.
+2. It serializes the request using the fields required by the configured provider API.
+3. A worker thread performs the HTTP request outside the main loop.
+4. The worker sends the response or an error through a Linda channel.
+5. The main script polls for completion and parses the response before updating the interface.
+
+## Implemented features
+
+- Background HTTP requests so network waits do not run directly in the main script loop.
+- Character/context configuration and a bounded conversation context.
+- Local history, saved replies, and reusable knowledge-base entries.
+- A bounded response cache for repeated prompts.
+- Manual provider selection between Groq and OpenRouter.
+- Model rotation within the selected provider after recognized rate-limit or model-availability errors.
+- UI windows and commands for chat, character settings, knowledge bases, saved replies, and history.
+- A focused JSON response extractor for the response fields consumed by this script.
+
+Provider selection is manual; the implementation does not automatically fail over from one provider to the other. Model rotation is limited to the model list for the provider currently selected.
+
+## Provider configuration
+
+The provider keys are constants near the top of `threaded_ai_chat_api.lua`:
+
+```lua
+local API_KEY = "YOUR_GROQ_KEY_HERE"
+local API_KEY_OR = ""
+```
+
+Replace the placeholders in a local working copy only. Do not commit real API keys or publish a populated copy of the script. The default provider is Groq. Use `/jrpor or` to select OpenRouter after configuring its key, or `/jrpor groq` to return to Groq.
+
+The script requires a valid key for the selected provider, the selected model to remain available, and network access to the service.
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `/jrp` | Open the main interface |
+| `/jrpset` | Open settings |
+| `/jrplast` | Reuse or view the last response |
+| `/jrpchar` | Manage character information |
+| `/jrpbase` | Open knowledge-base controls |
+| `/jrphistory` | Open response history |
+| `/jrpsave` | Save a response |
+| `/jrpsaved` | View saved responses |
+| `/jrpauto` | Toggle automatic response behavior |
+| `/jrphelp` | Show help |
+| `/jrpor groq` or `/jrpor or` | Select the provider |
+
+## JSON parsing edge case
+
+The response extractor handles escaped quotes, newline escapes, and backslash sequences while scanning the response content. A past defect involved a response ending with a literal backslash: a redundant look-behind check could treat the actual closing quote as escaped and continue reading into the next JSON field. The current source removes that redundant check and consumes escape pairs in one pass.
+
+The extractor is intentionally narrow and is not a general-purpose JSON parser. Provider response changes or unexpected JSON layouts may require an update.
+
+## Requirements and setup
+
+- A compatible MoonLoader scripting host and its ImGui integration
+- SAMPFUNCS and the event hooks used by the script
+- The `lanes` multi-state/threading library
+- The `requests` HTTP module
+- A valid API key for the selected provider
+- Network access to that provider
+
+Install the dependencies, copy `threaded_ai_chat_api.lua` into the host's MoonLoader scripts directory, set the desired provider key in a private local copy, then test with a short request before enabling automatic-response behavior.
+
+## Practical limits
+
+The worker model prevents a normal request wait from blocking the main script loop, but it does not remove network latency, provider rate limits, service outages, model changes, or dependency compatibility issues. The local polling timeout reports that a request took too long; it does not by itself guarantee that the underlying worker or HTTP operation was cancelled.
