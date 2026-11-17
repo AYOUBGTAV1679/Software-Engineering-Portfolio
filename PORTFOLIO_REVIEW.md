@@ -4,13 +4,13 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44165796973](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44165796973), completed successfully on commit `8a047477262e4381e794ee93d6a7d0a6cfd6bd7d`.
+The latest Lua validation run, [GitHub Actions #44179358186](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44179358186), completed successfully on commit `a356bb3b423577592f57eddf2539409674b9295c`.
 
 The workflow:
 - Parsed all **23 tracked Lua files** across the seven Lua projects with Lua 5.4.
 - Checked the Lua Code Checker fixture against its expected result: **3 errors, 3 warnings, 0 info**.
 - Ran the Lua Code Checker regression tests for module allowlisting and escaped-newline line tracking.
-- Ran **15 GIF decoder regression cases**, including the malformed-input cases, an independently encoded interlaced multi-pixel fixture that crosses LZW code-width boundaries, and a three-frame transparency/disposal fixture.
+- Ran **16 GIF decoder regression cases**, including the malformed-input cases, an independently encoded interlaced multi-pixel fixture that crosses LZW code-width boundaries, and a three-frame transparency/disposal fixture.
 - Ran **7 provider-error classifier cases**, including rate-limit and missing-model responses plus an unrelated invalid-key response.
 - Ran **5 AI prefetch epoch regression cases**, checking that reset or newer-request tokens invalidate older callbacks.
 - Ran **9 Network Session Recorder file-I/O regression cases**, including reported/thrown write failures and cleanup after flush/close errors.
@@ -41,7 +41,7 @@ The recorder prevents overlapping workers during stop/finalization, drains the p
 
 ### Scoreboard GIF Decoder
 
-The GIF parsing and LZW logic has been separated into the pure-Lua `gif_decoder_core.lua` module. The 15-case CI regression suite constructs malformed GIF streams in memory and reads two independent valid fixtures. A 32×32 interlaced image from a separate Python LZW encoder (verified with Pillow) exercises code-width growth through 9 bits; the LZW width transition was corrected after this sample exposed an off-by-one error in the decoder's dictionary-growth threshold. A three-frame Pillow-generated animation verifies transparency, frame composition, delay values, and restore-to-previous disposal. The malformed-input cases check accepted GIF87a/GIF89a headers, graphic-control extensions, trailer handling, truncated extension and image sub-blocks, logical-screen bounds, palette-index validation, invalid LZW dictionary references, missing LZW end codes, missing color tables, and unknown block markers.
+The GIF parsing and LZW logic has been separated into the pure-Lua `gif_decoder_core.lua` module. The 15-case CI regression suite constructs malformed GIF streams in memory and reads two independent valid fixtures. A 32×32 interlaced image from a separate Python LZW encoder (verified with Pillow) exercises code-width growth through 9 bits; the LZW width transition was corrected after this sample exposed an off-by-one error in the decoder's dictionary-growth threshold. A three-frame Pillow-generated animation verifies transparency, frame composition, delay values, and restore-to-previous disposal. A background-index bounds check is also covered. A malformed restore-to-background fixture was removed because its LZW stream lacked a valid end code; restore-to-background disposal is therefore not currently covered by a valid fixture. The malformed-input cases check accepted GIF87a/GIF89a headers, graphic-control extensions, trailer handling, truncated extension and image sub-blocks, logical-screen bounds, palette-index validation, invalid LZW dictionary references, missing LZW end codes, missing color tables, and unknown block markers.
 
 The suite is now broader than the original generated-only tests, but it is still a focused regression set, not a complete third-party GIF conformance corpus. Texture loading and playback still need testing in the target MoonLoader/ImGui environment. The optional `video_bridge.c` remains uncompiled and untested, and the Lua texture upload call is explicitly a placeholder; MP4 playback must remain labelled experimental.
 
