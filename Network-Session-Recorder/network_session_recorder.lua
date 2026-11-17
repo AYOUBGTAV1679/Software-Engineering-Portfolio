@@ -960,7 +960,7 @@ function DrawRecordPage()
 	elseif _State == Mode.record or _State == Mode.paused then
 		imgui.CenterText(Translate.currentlyrecording)
 		imgui.CenterText(_CurrentSaveName or "...")
-		imgui.CenterText(FormatElapsed(os.clock() - _RecordStartTick))
+		imgui.CenterText(FormatElapsed((RecorderClockMs() - _RecordStartTick) / 1000))
 		imgui.Dummy(imgui.ImVec2(0, 10))
 		if imgui.Button(_State == Mode.paused and Translate.resumerecording or Translate.pauserecording, imgui.ImVec2(-0.1, 55)) then
 			Recorder.TogglePause()

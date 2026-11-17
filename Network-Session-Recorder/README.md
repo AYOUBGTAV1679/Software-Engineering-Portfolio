@@ -35,6 +35,7 @@ Playback can only reproduce information that was captured, serialized, and suppo
 ## Engineering work
 
 - Recording writes, periodic flushes, and finalization now check file-operation results. A write/flush failure exits the worker through a protected path, and close is still attempted when the final flush fails.
+- The recording page's elapsed-time display now uses the same host timer and millisecond-to-second conversion as the recording overlay and flush scheduler.
 - Seeking is committed when the user finishes the slider interaction instead of running for every intermediate drag value.
 - Disabling participant viewpoint tracking also releases the associated camera/character state.
 - Recording output is flushed on a periodic schedule, reducing the amount of buffered data exposed to an unexpected exit.
