@@ -491,35 +491,63 @@ local walkGrants = {}
 
 -- Load our custom ped.ifp once at startup
 -- Place ped.ifp in: moonloader/skins/ped.ifp
-local PED_IFP_PATH = getGameDirectory() .. "/moonloader/skins/ped.ifp"
-local pedIfpLoaded = false
+-- The configured walk styles use the built-in "ped" animation block.
+-- requestAnimation expects an animation-block name, not a filesystem path.
+local PED_ANIMATION_BLOCK = "ped"
+local pedAnimationRequested = false
+local pedAnimationWarningShown = false
 
 local function loadPedIfp()
-    if pedIfpLoaded then return true end
-    -- FIX: ped.ifp is a binary animation file; "rb" is the technically correct
-    -- mode even though this particular call only checks existence (no content
-    -- or size is read here, so it wasn't visibly broken, just inconsistent).
-    local f = io.open(PED_IFP_PATH, "rb")
-    if f then
-        f:close()
-        -- FROM: A9xWalkStyle.cs opcode 04ED request_animation
-        requestAnimation(PED_IFP_PATH)
-        pedIfpLoaded = true
-        return true
+    if not pedAnimationRequested then
+        local ok, err = pcall(requestAnimation, PED_ANIMATION_BLOCK)
+        if not ok then
+            if not pedAnimationWarningShown then
+                Say("{FF4444}Could not request animation block 'ped': " .. tostring(err))
+                pedAnimationWarningShown = true
+            end
+            return false
+        end
+        pedAnimationRequested = true
     end
-    Say("{FF4444}ped.ifp not found! Place it in: moonloader/skins/ped.ifp")
-    return false
+
+    local ok, loaded = pcall(hasAnimationLoaded, PED_ANIMATION_BLOCK)
+    if not ok then
+        pedAnimationRequested = false
+        if not pedAnimationWarningShown then
+            Say("{FF4444}Could not check animation block 'ped': " .. tostring(loaded))
+            pedAnimationWarningShown = true
+        end
+        return false
+    end
+
+    if not loaded then return false end
+    pedAnimationWarningShown = false
+    return true
 end
 
--- FROM: A9xWalkStyle.cs pattern:
--- 1. request_animation (04ED) loads IFP
--- 2. set_char_anim (0245) applies to ped
+-- Apply only after the requested animation block is ready. The main loop
+-- retries saved walk grants, so this function does not need to block/yield.
 local function applyWalkStyle(ped, styleId)
     local ws = WALK_STYLES[styleId]
-    if not ws then return end
-    if not loadPedIfp() then return end
-    -- FROM: A9xWalkStyle.cs opcode 0245 set_char_anim
-    setCharAnimationFreezeLastFrame(ped, ws.ifp, ws.anim, 1.2, -1, true, false, false, false)
+    if not ws then return false end
+    if not loadPedIfp() then return false end
+
+    -- Avoid restarting the same walk animation on every periodic refresh.
+    local playingOk, alreadyPlaying = pcall(isCharPlayingAnim, ped, ws.anim)
+    if playingOk and alreadyPlaying then return true end
+
+    -- Standard MoonLoader task signature:
+    -- taskPlayAnim(ped, animation, IFP, speed, loop, lockX, lockY, lockF, time)
+    local ok, err = pcall(taskPlayAnim, ped, ws.anim, ws.ifp,
+        1.2, true, false, false, false, -1)
+    if not ok then
+        if not pedAnimationWarningShown then
+            Say("{FF4444}Could not apply walk animation: " .. tostring(err))
+            pedAnimationWarningShown = true
+        end
+        return false
+    end
+    return true
 end
 
 -- Pending skin application state, processed non-blocking in the main
@@ -539,7 +567,18 @@ local function ApplySkin(entry)
     -- Load custom DFF/TXD if this is a custom skin
     if CUSTOM_SKINS[id] then
         local c    = CUSTOM_SKINS[id]
-        -- Use slot 7 (MALE01) as base — valid GTA SA slot
+        -- The DFF loader is supplied by the target host/extension, if present.
+        -- Fail cleanly when it is unavailable instead of calling a nil global.
+        if c.dff and type(loadModelInfo) ~= "function" then
+            Say("{FF4444}Custom DFF loading is unavailable: loadModelInfo() is not provided by this host.")
+            return
+        end
+        if c.txd and type(loadTextureDictionary) ~= "function" then
+            Say("{FF4444}TXD loading is unavailable: loadTextureDictionary() is not provided by this host.")
+            return
+        end
+
+        -- Use slot 7 (MALE01) as the internal base slot for custom models.
         local slot = 7
 
         if c.txd then
@@ -559,8 +598,12 @@ local function ApplySkin(entry)
                         " bytes) - refusing to load it: " .. c.txd)
                     return
                 end
-                -- Load TXD into game dictionary
-                loadTxdDictionary(fullTxd)
+                -- Load the TXD using the documented MoonLoader opcode name.
+                local loadOk, loaded = pcall(loadTextureDictionary, fullTxd)
+                if not loadOk or loaded == false then
+                    Say("{FF4444}TXD loading failed: " .. tostring(loaded or c.txd))
+                    return
+                end
                 Say("TXD loaded: " .. c.txd)
             else
                 Say("TXD not found: " .. c.txd)
@@ -581,8 +624,12 @@ local function ApplySkin(entry)
                         " bytes) - refusing to load it: " .. c.dff)
                     return
                 end
-                -- Load DFF into slot 7 (valid slot GTA SA accepts)
-                loadModelInfo(slot, fullDff)
+                -- Custom DFF loading requires the host extension checked above.
+                local loadOk, loaded = pcall(loadModelInfo, slot, fullDff)
+                if not loadOk or loaded == false then
+                    Say("{FF4444}DFF loading failed: " .. tostring(loaded or c.dff))
+                    return
+                end
                 Say("DFF loaded into slot " .. slot)
             else
                 Say("DFF not found: " .. c.dff)
@@ -889,27 +936,31 @@ function main()
         end
     end)
 
-    -- /swalk <styleID>  set YOUR walk style (0-17)
+    -- /swalk <styleID>  set YOUR walk style (0-20)
     -- FROM: A9xWalkStyle.cs walk styles list
     sampRegisterChatCommand("swalk", function(args)
         local sid = tonumber(args)
         if not sid or not WALK_STYLES[sid] then
-            Say("Usage: /swalk <0-17>")
+            Say("Usage: /swalk <0-20>")
             for k, v in pairs(WALK_STYLES) do
                 sampAddChatMessage("  " .. k .. " = " .. v.label, -1)
             end
             return
         end
         walkGrants[0] = sid
-        applyWalkStyle(PLAYER_PED, sid)
-        Say("Walk: " .. WALK_STYLES[sid].label)
+        local applied = applyWalkStyle(PLAYER_PED, sid)
+        if applied then
+            Say("Walk style active: " .. WALK_STYLES[sid].label)
+        else
+            Say("Walk style saved; waiting for the animation block or host API.")
+        end
     end)
 
     -- /swalkp <playerID> <styleID>  set walk on another player
     sampRegisterChatCommand("swalkp", function(args)
         local pid, sid = args:match("^%s*(%d+)%s+(%d+)%s*$")
         if not pid or not sid then
-            Say("Usage: /swalkp <playerID> <styleID 0-17>")
+            Say("Usage: /swalkp <playerID> <styleID 0-20>")
             return
         end
         local playerId = tonumber(pid)
@@ -922,9 +973,13 @@ function main()
         pcall(function()
             local res, ped = sampGetCharHandleBySampPlayerId(playerId)
             if res and doesCharExist(ped) then
-                applyWalkStyle(ped, styleId)
-                Say("Walk " .. WALK_STYLES[styleId].label ..
-                    " -> player " .. playerId)
+                local applied = applyWalkStyle(ped, styleId)
+                if applied then
+                    Say("Walk " .. WALK_STYLES[styleId].label ..
+                        " -> player " .. playerId)
+                else
+                    Say("Walk style saved; waiting for the animation block or host API.")
+                end
             else
                 Say("Saved. Will apply when player is visible.")
             end
@@ -934,8 +989,9 @@ function main()
     -- /swalk0  reset YOUR walk to default
     sampRegisterChatCommand("swalk0", function()
         walkGrants[0] = nil
-        applyWalkStyle(PLAYER_PED, 0)
-        Say("Walk reset to Default.")
+        local applied = applyWalkStyle(PLAYER_PED, 0)
+        Say(applied and "Walk reset to Default." or
+            "Default walk reset saved; waiting for the animation block or host API.")
     end)
 
     -- FROM: PlayStable lines 363-383

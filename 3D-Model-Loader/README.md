@@ -31,7 +31,7 @@ moonloader/skins/<folder>/
 
 A custom entry may refer to `.dff` and `.txd` files. The generated INI includes a `[Skins]` section and an example row; keep that section header when adding entries. The script performs basic file-size checks before attempting to load binary assets. Those checks can reject obviously truncated files, but they do not prove that an asset is structurally valid or compatible.
 
-A `ped.ifp` file is expected at `moonloader/skins/ped.ifp` for the custom walk-style animation path.
+The configured walk styles use the host's `ped` animation block. No external `ped.ifp` file is required for these built-in walk styles.
 
 ## Commands
 
@@ -64,11 +64,13 @@ Personal settings and temporary assignments have different lifetimes: personal c
 
 Copy `model_loader_3d.lua` into the host's MoonLoader scripts directory, start the host, and open the interface with `/zskin`.
 
-## Unresolved host API dependencies
+## Host API integration status
 
-The current source calls `loadTxdDictionary`, `loadModelInfo`, and `setCharAnimationFreezeLastFrame`, but does not define or import those names in this project. The [MoonLoader opcode reference](https://github.com/v3sp4n/Lua/blob/master/moonloader_reference.txt) documents `loadTextureDictionary` for loading a TXD dictionary and `taskPlayAnim` for playing a character animation; it does not list the three names currently called by the source. The source also passes an absolute file path to `requestAnimation`, so that argument still needs verification against the target host.
+TXD loading now calls the documented `loadTextureDictionary` name, and walk-style playback uses `requestAnimation("ped")`, `hasAnimationLoaded("ped")`, and `taskPlayAnim`. The script checks for the animation block before applying a style and retries saved style assignments from its periodic loop. These changes are source-level corrections; they still need a smoke test in the target host.
 
-Until these calls are mapped to supported host functions or a declared extension, custom DFF/TXD loading and walk-style application must be treated as unverified. The current Lua CI check proves that the file parses; it does not prove that these global functions exist at runtime.
+Custom DFF loading remains dependent on a host extension that provides `loadModelInfo`. That function is not defined or imported in this project and is not listed in the [MoonLoader opcode reference](https://github.com/v3sp4n/Lua/blob/master/moonloader_reference.txt). The script now detects its absence and reports that custom DFF loading is unavailable instead of calling a missing global. The extension and its exact API remain to be identified and tested.
+
+The Lua CI check proves that the file parses; it does not prove that host functions or custom model assets work at runtime.
 
 ## Limitations
 
