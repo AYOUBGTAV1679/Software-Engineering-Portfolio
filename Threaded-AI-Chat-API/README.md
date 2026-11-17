@@ -69,7 +69,7 @@ The extractor is intentionally narrow and is not a general-purpose JSON parser. 
 - A valid API key for the selected provider
 - Network access to that provider
 
-Install the dependencies, copy `threaded_ai_chat_api.lua` into the host's MoonLoader scripts directory, and copy `provider_error_classifier.lua` into `moonloader/lib` so the script can resolve its pure error-classification helper. Set the desired provider key in a private local copy, then test with a short request before enabling automatic-response behavior.
+Install the dependencies, copy `threaded_ai_chat_api.lua` into the host's MoonLoader scripts directory, and copy both `provider_error_classifier.lua` and `prefetch_epoch.lua` into `moonloader/lib` so the script can resolve its pure-Lua helpers. Set the desired provider key in a private local copy, then test with a short request before enabling automatic-response behavior.
 
 ## Provider error regression tests
 
@@ -84,3 +84,14 @@ The cases cover common rate-limit and unavailable-model phrases/codes plus an un
 ## Practical limits
 
 The worker model prevents a normal request wait from blocking the main script loop, but it does not remove network latency, provider rate limits, service outages, model changes, or dependency compatibility issues. Request deadlines use the host's elapsed-time game timer rather than Lua's process-CPU clock. The same timer is used for the short response-correlation window. The polling coroutine also checks the worker status and reports lane errors/cancellation instead of waiting for the full deadline. When the deadline expires, the script retains the Lua Lanes worker handle and issues a hard cancellation request. Lanes cancellation is cooperative: a worker blocked inside a native/network call may not process cancellation until that call returns. The implementation deliberately avoids force-killing the worker because doing so can leave native resources or locks in an unsafe state.
+
+
+## Prefetch concurrency regression tests
+
+The prefetch result path uses a monotonically increasing request epoch. Resetting the current chat context or accepting a cache hit invalidates older callbacks, preventing a delayed result for a previous message from replacing the active message's suggestion state. The epoch helper is tested without a live provider request:
+
+```sh
+lua5.4 tests/test_prefetch_epoch.lua
+```
+
+This checks callback freshness bookkeeping only; it does not simulate the MoonLoader event loop or prove live HTTP timing behavior.

@@ -54,8 +54,8 @@ jobs:
               -type f -name '*.lua' -print0 | sort -z
           )
 
-          if [ "${#lua_files[@]}" -ne 21 ]; then
-            printf 'Expected 21 Lua files, found %s\n' "${#lua_files[@]}"
+          if [ "${#lua_files[@]}" -ne 23 ]; then
+            printf 'Expected 23 Lua files, found %s\n' "${#lua_files[@]}"
             exit 1
           fi
 
@@ -90,6 +90,9 @@ jobs:
 
       - name: Run AI provider error classifier tests
         run: cd Threaded-AI-Chat-API && lua5.4 tests/test_provider_error_classifier.lua
+
+      - name: Run AI prefetch epoch regression tests
+        run: cd Threaded-AI-Chat-API && lua5.4 tests/test_prefetch_epoch.lua
 
       - name: Run Network Session Recorder file-I/O tests
         run: cd Network-Session-Recorder && lua5.4 tests/test_recorder_file_io.lua
