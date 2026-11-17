@@ -796,6 +796,111 @@ local function TryPrefetch(mode, text)
     )
 end
 
+local function SendAutoSmart()
+    if last_text == "" then status_msg = "Nothing - use /jrpset"; return end
+    if is_loading then return end
+    local cmd = GetCmd(last_type, false)
+    local ck  = CK(cmd, last_type, last_text)
+    local c   = CGe(ck)
+    if c then
+        local e = ParseResp(c)
+        if e[1] then
+            smart_label = e[1].label
+            smart_text  = e[1].text
+            w_smart.v   = true
+            SyncUI()
+        end
+        return
+    end
+    is_loading = true
+    status_msg = "Thinking (Auto)..."
+    SendRequest(cmd, last_type, last_text,
+        function(r)
+            is_loading = false
+            CSe(ck, r)
+            local e = ParseResp(r)
+            if e[1] then
+                smart_label = e[1].label
+                smart_text  = e[1].text
+                w_smart.v   = true
+                SyncUI()
+                status_msg = "Auto ready"
+            else
+                status_msg = "No response"
+            end
+        end,
+        function(err)
+            is_loading = false
+            status_msg = "Error: " .. tostring(err)
+        end
+    )
+end
+
+--------------------------------------------------------------------------------
+-- CHAT MONITOR
+--------------------------------------------------------------------------------
+local function AddCtx(line)
+    if not line or line == "" or IsOOC(line) then return end
+    chat_context[#chat_context+1] = line
+    if #chat_context > CTX_MAX then table.remove(chat_context, 1) end
+end
+
+-- Track users who seem to use RP scripts (respond too fast, consistent patterns)
+local rp_script_users = {}
+local last_response_time = {}
+
+local function CleanText(text)
+    if not text then return "" end
+    -- remove SAMP color codes {RRGGBB}
+    text = text:gsub("{%x%x%x%x%x%x}", "")
+    -- remove leading dash (server chat format: "- Text")
+    text = text:gsub("^%s*%-%s*", "")
+    -- remove trailing (Name) or (Name) [id] — leftover from /do detection
+    text = text:gsub("%s*%(([%a][%w_]+)%)%s*%[%d+%]%s*$", "")
+    text = text:gsub("%s*%(([%a][%w_]+)%)%s*$", "")
+    -- remove trailing dot
+    text = text:gsub("%.%s*$", "")
+    -- trim
+    text = text:gsub("^%s+", ""):gsub("%s+$", "")
+    return text
+end
+
+local function AddChatLog(sender, atype, text)
+    if not text or text == "" then return end
+    table.insert(chat_log, 1, {
+        sender = sender or "?",
+        atype  = atype  or "me",
+        text   = text,
+        time   = os.date("%H:%M:%S"),
+        is_rp  = (rp_script_users[sender] == true),
+    })
+    if #chat_log > CHATLOG_MAX then table.remove(chat_log) end
+end
+
+-- Called when WE send a chat message
+-- If another player responds within 3 seconds, flag them as possible RP script user
+local function TrackResponse(sender)
+    local now = NowMilliseconds()
+    for s, t in pairs(last_response_time) do
+        if sender ~= s and (now - t) < 3000 then
+            rp_script_users[sender] = true
+        end
+    end
+    last_response_time[sender] = now
+end
+
+local function IsMe(name)
+    if not name or name == "" then return false end
+    if my_name == "" then return false end
+    -- compare lowercase, both with spaces and underscores
+    local a  = name:lower()
+    local a2 = a:gsub("_"," "):gsub(" ","")
+    local b  = my_name:lower()
+    local b2 = b:gsub("_"," "):gsub(" ","")
+    return a == b or a2 == b2
+        or a:gsub("_","") == b:gsub("_","")
+end
+
 local function ResetPF()
     prefetch_epoch:invalidate()
     prefetch_key = ""
