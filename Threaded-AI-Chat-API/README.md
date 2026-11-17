@@ -73,4 +73,4 @@ Install the dependencies, copy `threaded_ai_chat_api.lua` into the host's MoonLo
 
 ## Practical limits
 
-The worker model prevents a normal request wait from blocking the main script loop, but it does not remove network latency, provider rate limits, service outages, model changes, or dependency compatibility issues. The local polling timeout reports that a request took too long; it does not by itself guarantee that the underlying worker or HTTP operation was cancelled.
+The worker model prevents a normal request wait from blocking the main script loop, but it does not remove network latency, provider rate limits, service outages, model changes, or dependency compatibility issues. Request deadlines use the host's elapsed-time game timer rather than Lua's process-CPU clock. The same timer is used for the short response-correlation window. A timeout reports that a response was not received in time; it does not guarantee that the underlying worker or HTTP operation was cancelled.

@@ -94,3 +94,6 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Removed the per-record flush from the queue writer. The writer now buffers sequential writes and flushes on a five-second elapsed-time schedule, followed by a final flush at close, avoiding a disk flush for every captured event.
 - Replaced process-CPU-time measurements for recording duration and periodic flush checks with the host game timer (milliseconds), falling back to system time at one-second resolution. This makes the displayed duration and five-second flush interval track elapsed time while the script yields.
 - The recorder still needs host runtime testing under sustained packet load and forced file-write failures. The CI Lua parser does not exercise disk throughput or native hooks.
+
+
+- The short response-correlation window used by the RP-script heuristic now uses the same elapsed-time clock as request deadlines. It no longer compares events with os.clock process-CPU time, which could distort a three-second window while the host yields.

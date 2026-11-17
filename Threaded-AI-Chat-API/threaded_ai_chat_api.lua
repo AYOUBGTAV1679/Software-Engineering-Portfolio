@@ -813,9 +813,9 @@ end
 -- Called when WE send a chat message
 -- If another player responds within 3 seconds, flag them as possible RP script user
 local function TrackResponse(sender)
-    local now = os.clock()
+    local now = NowMilliseconds()
     for s, t in pairs(last_response_time) do
-        if sender ~= s and (now - t) < 3.0 then
+        if sender ~= s and (now - t) < 3000 then
             rp_script_users[sender] = true
         end
     end
