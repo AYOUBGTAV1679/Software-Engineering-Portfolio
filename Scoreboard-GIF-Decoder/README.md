@@ -16,7 +16,7 @@ The Lua decoder handles:
 - LZW decompression with variable-width codes from 2 to 12 bits. Invalid or truncated code streams are rejected, and decoded output is capped at the image's declared pixel count.
 - Clear and end-of-information codes and dictionary growth.
 - Frame transparency, composition, and disposal handling.
-- Frame timing and playback independent of the host's render callback rate.
+- Frame timing and playback independent of the host's render callback rate, using elapsed host time rather than Lua's process-CPU clock.
 - An on-disk cache of decoded frames and a manifest so repeat loads can reuse prior work.
 
 This pipeline performs the parsing and decompression itself instead of delegating GIF decoding to a system image library.
@@ -41,4 +41,4 @@ Copy `scoreboard_gif_decoder.lua` into the host's MoonLoader scripts directory. 
 
 ## Limitations
 
-The decoder limits the logical screen and each image descriptor to 4,000,000 pixels, and limits the aggregate logical-screen pixels copied across frames to 4,000,000 per decode. These bounds reduce runaway allocations but can reject long animations or very large images. Large or malformed media should still be tested carefully. The native video bridge requires a compatible FFmpeg build, a working compiler toolchain, and a verified texture-upload function before it can be considered usable.
+The decoder limits the logical screen and each image descriptor to 4,000,000 pixels, and limits the aggregate logical-screen pixels copied across frames to 4,000,000 per decode. GIF timing, video frame scheduling, image transitions, and automatic image cycling use the host game timer; a one-second-resolution system clock is used only as a fallback. These bounds reduce runaway allocations but can reject long animations or very large images. Large or malformed media should still be tested carefully. The native video bridge requires a compatible FFmpeg build, a working compiler toolchain, and a verified texture-upload function before it can be considered usable.

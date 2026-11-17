@@ -97,3 +97,6 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 
 
 - The short response-correlation window used by the RP-script heuristic now uses the same elapsed-time clock as request deadlines. It no longer compares events with os.clock process-CPU time, which could distort a three-second window while the host yields.
+
+
+- Replaced process-CPU-time clock reads for GIF frame delays, experimental video frame scheduling, image transitions, and automatic background cycling with the host game timer in seconds. A one-second-resolution system clock is used only if the host timer is unavailable. This corrects elapsed-time measurement but does not validate the experimental video bridge.

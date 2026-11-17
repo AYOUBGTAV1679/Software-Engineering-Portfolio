@@ -178,7 +178,18 @@ local notesSaved = true
 local customImgList = {}
 local cycleEnabled = imgui.ImBool(allset.set.customImgCycle == 1)
 local cycleInterval = imgui.ImInt(allset.set.customImgCycleInterval)
-local lastCycleTime = os.clock()
+-- ScoreboardNowSeconds() measures CPU time; animation, transitions, and cycling need elapsed time.
+local function ScoreboardNowSeconds()
+	if type(getGameTimer) == "function" then
+		local ok, milliseconds = pcall(getGameTimer)
+		if ok and type(milliseconds) == "number" then
+			return milliseconds / 1000
+		end
+	end
+	return os.time()
+end
+
+local lastCycleTime = ScoreboardNowSeconds()
 
 local imgTransitionPrev = nil
 local imgTransitionStart = nil
@@ -246,7 +257,7 @@ end
 function selectImgFromList(path)
 	if path ~= allset.set.customImgPath then
 		imgTransitionPrev = customBackground
-		imgTransitionStart = os.clock()
+		imgTransitionStart = ScoreboardNowSeconds()
 	end
 	allset.set.customImgPath = path
 	customImgPathBuf.v = path
@@ -313,7 +324,7 @@ local videoPlayback = {
 function advanceVideoPlayback()
 	if not videoLibOk or not videoPlayback.handle then return end
 	if videoPlayback.path ~= allset.set.customImgPath then return end
-	if os.clock() < videoPlayback.nextFrameDue then return end
+	if ScoreboardNowSeconds() < videoPlayback.nextFrameDue then return end
 
 	local bufSize = videoPlayback.width * videoPlayback.height * 4
 	local buf = ffi.new("uint8_t[?]", bufSize)
@@ -324,7 +335,7 @@ function advanceVideoPlayback()
 		-- end of stream - loop back to the start
 		videoLib.video_close(videoPlayback.handle)
 		videoPlayback.handle = videoLib.video_open(videoPlayback.path)
-		videoPlayback.nextFrameDue = os.clock() + (1 / 30)
+		videoPlayback.nextFrameDue = ScoreboardNowSeconds() + (1 / 30)
 		return
 	elseif result ~= 1 then
 		return -- decode error, leave last good frame on screen
@@ -339,7 +350,7 @@ function advanceVideoPlayback()
 		customBackground = tex
 	end
 
-	videoPlayback.nextFrameDue = os.clock() + (1 / 30)
+	videoPlayback.nextFrameDue = ScoreboardNowSeconds() + (1 / 30)
 end
 
 function loadVideoBackground(path)
@@ -796,12 +807,12 @@ function advanceGifPlayback()
 	if not entry or entry.error then return end
 	local frame = entry.frames[gifPlayback.frameIndex]
 	if not frame then return end
-	if os.clock() - gifPlayback.frameStart >= frame.delay then
+	if ScoreboardNowSeconds() - gifPlayback.frameStart >= frame.delay then
 		gifPlayback.frameIndex = gifPlayback.frameIndex + 1
 		if gifPlayback.frameIndex > #entry.frames then
 			gifPlayback.frameIndex = 1
 		end
-		gifPlayback.frameStart = os.clock()
+		gifPlayback.frameStart = ScoreboardNowSeconds()
 		local newFrame = entry.frames[gifPlayback.frameIndex]
 		if not newFrame.texture then
 			newFrame.texture = imgui.CreateTextureFromFile(newFrame.path)
@@ -831,7 +842,7 @@ function loadCustomBackground()
 				else
 					gifPlayback.path = allset.set.customImgPath
 					gifPlayback.frameIndex = 1
-					gifPlayback.frameStart = os.clock()
+					gifPlayback.frameStart = ScoreboardNowSeconds()
 					if not entry.frames[1].texture then
 						entry.frames[1].texture = imgui.CreateTextureFromFile(entry.frames[1].path)
 					end
@@ -1332,7 +1343,7 @@ function imgui.OnDrawFrame()
 				imgui.TextColored(imgui.ImVec4(0.6, 0.75, 1.0, 1.0), 'Auto-cycle (like RGB, but images)')
 				if imgui.Checkbox('Automatically switch between my images', cycleEnabled) then
 					allset.set.customImgCycle = cycleEnabled.v and 1 or 0
-					lastCycleTime = os.clock()
+					lastCycleTime = ScoreboardNowSeconds()
 					inicfg.save(allset, "SW-Scoreboard-Pro")
 				end
 				imgui.AlignTextToFramePadding()
@@ -1429,9 +1440,9 @@ function imgui.OnDrawFrame()
 				if activeGif and not activeGif.error and activeGif.totalDuration and activeGif.totalDuration > waitTime then
 					waitTime = activeGif.totalDuration
 				end
-				if os.clock() - lastCycleTime >= waitTime then
+				if ScoreboardNowSeconds() - lastCycleTime >= waitTime then
 					cycleToNextImage()
-					lastCycleTime = os.clock()
+					lastCycleTime = ScoreboardNowSeconds()
 				end
 			end
 		end
@@ -1442,7 +1453,7 @@ function imgui.OnDrawFrame()
 			local imgH = size.y-(bTitlebar.v == 0 and 21 or 0)
 			local progress = 1.0
 			if imgTransitionStart then
-				local elapsed = os.clock() - imgTransitionStart
+				local elapsed = ScoreboardNowSeconds() - imgTransitionStart
 				if elapsed < imgTransitionDuration then
 					progress = elapsed / imgTransitionDuration
 				else
