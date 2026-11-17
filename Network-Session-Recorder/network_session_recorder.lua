@@ -21,6 +21,7 @@ script_version("7")
 script_author("kuzheren (maynkraftpro2010) + extended by Sam Wilson")
 --------------------------------------------------------------
 require("sampfuncs")
+local recorderFileIO = require("recorder_file_io")
 local imgui = require("imgui")
 local encoding = require("encoding")
 encoding.default = "CP1251"
@@ -456,117 +457,121 @@ Recorder = {
 		_RecordStartTick = RecorderClockMs()
 		lua_thread.create(function()
 			local SaveName = DeGenerateName(Settings.customNamePrefix.v)
-			local file = io.open(getGameDirectory() .. "/moonloader/ReplayMod/" .. SaveName, "a")
+			local file = nil
+			local workerOk, workerError = pcall(function()
+				file = io.open(getGameDirectory() .. "/moonloader/ReplayMod/" .. SaveName, "a")
+				if not file then
+					error("Could not create the recording file.")
+				end
 
-			if not file then
-				Say("Could not create the recording file. Recording cancelled.")
-				_DataQueue = {}
-				_Waiting = false
-				_WaitingIteration = 0
-				_CurrentSaveName = nil
-				_CurrentFile = nil
-				_State = Mode.idle
-				_RecorderClosing = false
-				return
-			end
+				_CurrentSaveName = SaveName
+				_CurrentFile = file
 
-			_CurrentSaveName = SaveName
-			_CurrentFile = file
+				-- Write the cached world-init snapshot FIRST so this recording
+				-- is self-contained no matter when in the session it started.
+				if _CachedInitGame then
+					AddDataToSaveFile(file, PacketTag.RPC .. _CachedInitGame .. "\\n")
+				end
+				if _CachedConnectId then
+					AddDataToSaveFile(file, PacketTag.RPC .. _CachedConnectId .. "\\n")
+				end
+				if _CachedFFLine then
+					AddDataToSaveFile(file, PacketTag.RPC .. _CachedFFLine .. "\\n")
+				end
 
-			-- Write the cached world-init snapshot FIRST so this recording
-			-- is self-contained no matter when in the session it started.
-			if _CachedInitGame then
-				AddDataToSaveFile(file, PacketTag.RPC .. _CachedInitGame .. "\n")
-			end
-			if _CachedConnectId then
-				AddDataToSaveFile(file, PacketTag.RPC .. _CachedConnectId .. "\n")
-			end
-			if _CachedFFLine then
-				AddDataToSaveFile(file, PacketTag.RPC .. _CachedFFLine .. "\n")
-			end
-
-			-- Embed a snapshot of currently-connected players' name
-			-- colors AND skins straight into this recording (no separate
-			-- temp file). Only players who are actually connected right
-			-- now get written - not the whole historical cache.
-			pcall(function()
-				local maxId = sampGetMaxPlayerId(false)
-				for i = 0, maxId do
-					if sampIsPlayerConnected(i) then
-						local nick = sampGetPlayerNickname(i)
-						local ok, color = pcall(sampGetPlayerColor, i)
-
-						local skin = -1
-						local res, handle = sampGetCharHandleBySampPlayerId(i)
-						if res and doesCharExist(handle) then
-							local okSkin, skinId = pcall(getCharModel, handle)
-							if okSkin then skin = skinId end
-						end
-
-						if nick and nick ~= "" and ok and color then
-							AddDataToSaveFile(file, PacketTag.ColorInfo .. nick .. "=" ..
-								string.format("%08X", color) .. ":" .. tostring(skin) .. "\n")
+				-- Embed a snapshot of currently connected participants.
+				local snapshotOk, snapshotError = pcall(function()
+					local maxId = sampGetMaxPlayerId(false)
+					for i = 0, maxId do
+						if sampIsPlayerConnected(i) then
+							local nick = sampGetPlayerNickname(i)
+							local ok, color = pcall(sampGetPlayerColor, i)
+							local skin = -1
+							local res, handle = sampGetCharHandleBySampPlayerId(i)
+							if res and doesCharExist(handle) then
+								local okSkin, skinId = pcall(getCharModel, handle)
+								if okSkin then skin = skinId end
+							end
+							if nick and nick ~= "" and ok and color then
+								AddDataToSaveFile(file, PacketTag.ColorInfo .. nick .. "=" ..
+									string.format("%08X", color) .. ":" .. tostring(skin) .. "\\n")
+							end
 						end
 					end
+				end)
+				if not snapshotOk then error(snapshotError) end
+
+				Say(Translate.recordingstarted .. " " .. SaveName)
+				local lastFlush = RecorderClockMs()
+
+				while _State == Mode.record or _State == Mode.paused do
+					wait(10)
+					if _State == Mode.record then
+						for i = 1, 100 do
+							if _DataQueue[1] ~= nil then
+								if _Waiting then
+									_Waiting = false
+									AddDataToSaveFile(file, PacketTag.Waiting .. tostring(_WaitingIteration) .. "\\n")
+									_WaitingIteration = 0
+								end
+								AddDataToSaveFile(file, _DataQueue[1] .. "\\n")
+								table.remove(_DataQueue, 1)
+							else
+								_Waiting = true
+								_WaitingIteration = _WaitingIteration + 1
+							end
+						end
+
+						-- Fail the worker on a reported flush error instead of silently
+						-- continuing with a recording that may no longer reach disk.
+						local nowMs = RecorderClockMs()
+						if nowMs - lastFlush >= 5000 then
+							lastFlush = nowMs
+							local flushOk, flushError = recorderFileIO.flush(file)
+							if not flushOk then
+								error("Periodic recording flush failed: " .. tostring(flushError))
+							end
+						end
+					end
+				end
+
+				-- Drain queued events, then persist the final quiet interval too.
+				while _DataQueue[1] ~= nil do
+					if _Waiting then
+						_Waiting = false
+						AddDataToSaveFile(file, PacketTag.Waiting .. tostring(_WaitingIteration) .. "\\n")
+						_WaitingIteration = 0
+					end
+					AddDataToSaveFile(file, _DataQueue[1] .. "\\n")
+					table.remove(_DataQueue, 1)
+				end
+				if _Waiting then
+					AddDataToSaveFile(file, PacketTag.Waiting .. tostring(_WaitingIteration) .. "\\n")
+					_Waiting = false
+					_WaitingIteration = 0
 				end
 			end)
 
-			Say(Translate.recordingstarted .. " " .. SaveName)
-
-			local lastFlush = RecorderClockMs()
-
-			while _State == Mode.record or _State == Mode.paused do
-				wait(10)
-				if _State == Mode.record then
-					for i=1, 100 do
-						if _DataQueue[1] ~= nil then
-							if _Waiting then
-								_Waiting = false
-								local iterStr = tostring(_WaitingIteration)
-								AddDataToSaveFile(file, PacketTag.Waiting .. iterStr .. "\n")
-								_WaitingIteration = 0
-							end
-							AddDataToSaveFile(file, _DataQueue[1] .. "\n")
-							table.remove(_DataQueue, 1)
-						else
-							_Waiting = true
-							_WaitingIteration = _WaitingIteration + 1
-						end
-					end
-
-					-- For long sessions (hours), force buffered writes to
-					-- actually hit disk every few seconds, so a crash or
-					-- unexpected exit mid-session only loses a few seconds
-					-- of unflushed data instead of a potentially large
-					-- buffered chunk that was never written.
-					local nowMs = RecorderClockMs()
-					if nowMs - lastFlush >= 5000 then
-						lastFlush = nowMs
-						pcall(function() file:flush() end)
-					end
-				end
+			-- Cleanup runs even when open/write/flush logic fails. finalize()
+			-- attempts close even if its preceding flush reports an error.
+			local finalizeOk, finalizeError = true, nil
+			if file then
+				finalizeOk, finalizeError = recorderFileIO.finalize(file)
 			end
-			-- Drain whatever's still queued before closing, so the last
-			-- moments right before Stop was pressed aren't lost.
-			while _DataQueue[1] ~= nil do
-				if _Waiting then
-					_Waiting = false
-					AddDataToSaveFile(file, PacketTag.Waiting .. tostring(_WaitingIteration) .. "\n")
-					_WaitingIteration = 0
-				end
-				AddDataToSaveFile(file, _DataQueue[1] .. "\n")
-				table.remove(_DataQueue, 1)
-			end
-			if _CurrentFile then
-				_CurrentFile:flush()
-				_CurrentFile:close()
-				_CurrentFile = nil
-			end
+			if _CurrentFile == file then _CurrentFile = nil end
+			_CurrentSaveName = nil
 			_DataQueue = {}
 			_Waiting = false
 			_WaitingIteration = 0
 			_RecorderClosing = false
-			Say(Translate.recordingstopped)
+
+			if not workerOk or not finalizeOk then
+				_State = Mode.idle
+				local reason = not workerOk and workerError or finalizeError
+				Say("Recording stopped with a file I/O error: " .. tostring(reason))
+			else
+				Say(Translate.recordingstopped)
+			end
 		end)
 	end,
 
@@ -1444,9 +1449,12 @@ function AddDataToQueue(SerializedString, ModeTag)
 end
 
 function AddDataToSaveFile(SaveHandle, Data)
-	-- Writes are buffered; the recorder flushes on a wall-clock schedule and
-	-- performs one final flush before closing the file.
-	SaveHandle:write(Data)
+	-- Treat reported write failures as worker errors so cleanup still runs.
+	local ok, err = recorderFileIO.write(SaveHandle, Data)
+	if not ok then
+		error("Recording write failed: " .. tostring(err), 2)
+	end
+	return true
 end
 
 function LoadSave(LoadPath)

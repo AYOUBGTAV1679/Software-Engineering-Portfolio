@@ -34,10 +34,11 @@ Playback can only reproduce information that was captured, serialized, and suppo
 
 ## Engineering work
 
-- File operations at key read/write sites are guarded so ordinary path or file errors do not automatically become unhandled script failures.
+- Recording writes, periodic flushes, and finalization now check file-operation results. A write/flush failure exits the worker through a protected path, and close is still attempted when the final flush fails.
 - Seeking is committed when the user finishes the slider interaction instead of running for every intermediate drag value.
 - Disabling participant viewpoint tracking also releases the associated camera/character state.
 - Recording output is flushed on a periodic schedule, reducing the amount of buffered data exposed to an unexpected exit.
+- The last quiet interval before Stop is stored as a trailing wait record, rather than being discarded when no later packet arrives.
 
 ## Requirements and setup
 
@@ -45,8 +46,19 @@ Playback can only reproduce information that was captured, serialized, and suppo
 - SAMPFUNCS and the packet/RPC hook functions used by the script
 - The host's ImGui integration
 
-Copy `network_session_recorder.lua` into the host's MoonLoader scripts directory. The script creates its working directory for recordings and settings when needed. Recording filename prefixes and nicknames are reduced to safe alphanumeric, underscore, and hyphen components, and a numeric suffix is added when a timestamp-based name already exists so a new session is not appended to an older recording.
+Copy `network_session_recorder.lua` into the host's MoonLoader scripts directory and `recorder_file_io.lua` into `moonloader/lib`. The script creates its working directory for recordings and settings when needed. Recording filename prefixes and nicknames are reduced to safe alphanumeric, underscore, and hyphen components, and a numeric suffix is added when a timestamp-based name already exists so a new session is not appended to an older recording.
 
 ## Data and limitations
 
 The recording contains selected client-observed events and participant metadata. It is not a universal network sniffer, it does not guarantee that every event is captured, and playback fidelity depends on the recording data and the replay handlers available in the current host build. Keep in mind that recordings may contain session-identifying information; store and share them accordingly.
+
+
+## Focused file-I/O tests
+
+The pure-Lua file-operation module has a regression suite that checks successful writes, reported and thrown write errors, flush/close failures, and the requirement that close is attempted even after a failed flush. Run it from this project directory with:
+
+```sh
+lua5.4 tests/test_recorder_file_io.lua
+```
+
+These tests exercise the file-operation helper with controlled fake handles. They do not replace a disk-full or sustained-recording test in the target host.
