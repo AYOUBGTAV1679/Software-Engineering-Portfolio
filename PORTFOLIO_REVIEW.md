@@ -1,6 +1,6 @@
 # Portfolio Review and Verification Notes
 
-This note records the checks performed on the seven project sources in this bundle. It separates syntax/static checks from integration tests that require each project's target host or external service.
+This note records the checks performed on the seven Lua-based project sources in this portfolio, alongside the separately documented Aegis application. It separates syntax/static checks from integration tests that require each project's target host or external service. It separates syntax/static checks from integration tests that require each project's target host or external service.
 
 ## Changes made
 
@@ -14,10 +14,10 @@ This note records the checks performed on the seven project sources in this bund
 
 ## Verification performed
 
-- Parsed all 15 tracked Lua source and test files in the seven projects with Lua 5.4: **15 passed, 0 syntax errors** in GitHub Actions run [#44111414948](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44111414948).
+- Parsed all 15 tracked Lua source and test files in the seven projects with Lua 5.4: **15 passed, 0 syntax errors** in GitHub Actions run [#44120155848](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120155848).
 - Executed Lua Code Checker's included `tests/sample_bad.lua` fixture with the bundled checker: **3 errors and 3 warnings**, matching the fixture's expected output. The CI job checks both the expected exit code and the exact summary. The focused regression script also passed its namespace allowlist and escaped-newline line-number assertions.
 - Ran the checker across the 15 Lua files: it reported the intentional findings in `sample_bad.lua` plus heuristic warnings in some project files. These warnings need manual review; the checker is pattern-based and does not establish that each warning is a defect.
-- Added `.github/workflows/validate-lua-projects.yml` to parse all 15 Lua files, validate the analyzer fixture, and run focused regression checks on pushes and pull requests. GitHub Actions run [#44111414948](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44111414948) completed successfully.
+- Added `.github/workflows/validate-lua-projects.yml` to parse all 15 Lua files, validate the analyzer fixture, and run focused regression checks on pushes and pull requests. GitHub Actions run [#44120155848](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120155848) completed successfully.
 
 ## Not verified in this environment
 
@@ -123,3 +123,10 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Retained the lane handle for each active HTTP request. When the request deadline expires, the polling coroutine now requests hard lane cancellation and reports the timeout rather than silently abandoning the worker.
 - The implementation deliberately does not force-kill a worker. Lua Lanes cancellation is cooperative; a worker blocked inside a native/network call may not process cancellation until control returns to Lua. This limitation is documented.
 - Provider routing and API-key selection remain paired at request creation. No live provider request has been made as part of this source review.
+
+
+## Latest validation after the November 17 source updates
+
+- GitHub Actions run [#44120155848](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120155848) completed successfully on commit `695f9b0`.
+- All 15 tracked Lua files parsed with Lua 5.4; the Lua Code Checker fixture produced its expected 3 errors and 3 warnings; the focused regression script passed.
+- The run validates syntax and the checker's included regression cases. It does not execute the GIF decoder against a conformance corpus, compile the optional native video bridge, exercise the host-specific Lua scripts, or send a live AI provider request.
