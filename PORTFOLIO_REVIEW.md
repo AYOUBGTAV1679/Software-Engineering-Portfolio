@@ -56,3 +56,4 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Made command-line module lookup accept both Unix and Windows path separators when the checker is invoked through a path.
 - Extended the intentional fixture to cover a misleading nested module name and added focused Lua regression tests. CI now checks **15 Lua files**, the expected fixture summary (**3 errors, 3 warnings, 0 info**), and the focused regression assertions.
 - Clarified interpreter compatibility: the implementation uses `goto`, which is native in Lua 5.2+ and supported by LuaJIT 2.1; it should not be advertised as compatible with a plain Lua 5.1 interpreter.
+- CI follow-up: the first regression-test invocation ran from the repository root, so Lua's default module path could not resolve the checker modules. The workflow now runs that test from the project directory, matching its module layout.

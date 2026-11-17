@@ -83,4 +83,4 @@ jobs:
           grep -F 'Scanned 1 file(s): 3 error(s), 3 warning(s), 0 info.' <<< "$output"
 
       - name: Run Lua Code Checker regression tests
-        run: lua5.4 Lua-Code-Checker/tests/test_checker_regressions.lua
+        run: cd Lua-Code-Checker && lua5.4 tests/test_checker_regressions.lua
