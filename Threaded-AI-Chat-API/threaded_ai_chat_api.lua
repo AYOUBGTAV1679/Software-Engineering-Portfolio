@@ -484,7 +484,7 @@ end
 -- The lane runs requests.request in background, result posted to linda
 -- Main lua_thread polls linda with wait(0) — zero blocking, zero crash
 --------------------------------------------------------------------------------
-local function DoHttpRequest(cmd, mode, text, request_id)
+local function DoHttpRequest(cmd, mode, text, request_id, request_provider, request_model)
     if not lanes then
         http_queue[request_id] = { err = "lanes not ready" }
         return
@@ -494,12 +494,12 @@ local function DoHttpRequest(cmd, mode, text, request_id)
     local prompt = BuildPrompt(text)
     local body = string.format(
         '{"model":"%s","max_tokens":400,"temperature":0.7,"messages":[{"role":"system","content":"%s"},{"role":"user","content":"%s"}]}',
-        MODEL, JE(sys), JE(prompt)
+        request_model, JE(sys), JE(prompt)
     )
 
     -- Resolve the provider at request creation time. Keep endpoint and key paired.
-    local api_key = USE_OR and API_KEY_OR or API_KEY
-    local api_url = USE_OR
+    local api_key = request_provider and API_KEY_OR or API_KEY
+    local api_url = request_provider
         and "https://openrouter.ai/api/v1/chat/completions"
         or  "https://api.groq.com/openai/v1/chat/completions"
     local pkg_path  = package.path
@@ -628,18 +628,25 @@ end
 
 -- High-level: send request and call callback when done
 local function SendRequest(cmd, mode, text, on_done, on_err)
-    local active_key = USE_OR and API_KEY_OR or API_KEY
+    -- A request must keep the provider/model pair it started with. The user
+    -- can change providers while a worker is still running.
+    local request_provider = USE_OR
+    local request_model = MODEL
+    local request_info = { use_or = request_provider, model = request_model }
+    local function reportError(message)
+        if on_err then on_err(message, request_info) end
+    end
+
+    local active_key = request_provider and API_KEY_OR or API_KEY
     local missing_key = not active_key or active_key == ""
-        or (not USE_OR and active_key == "YOUR_GROQ_KEY_HERE")
+        or (not request_provider and active_key == "YOUR_GROQ_KEY_HERE")
     if missing_key then
-        if on_err then
-            on_err(USE_OR and "Set API_KEY_OR in the script first" or "Set API_KEY in the script first")
-        end
+        reportError(request_provider and "Set API_KEY_OR in the script first" or "Set API_KEY in the script first")
         return
     end
 
     local id = NextId()
-    DoHttpRequest(cmd, mode, text, id)
+    DoHttpRequest(cmd, mode, text, id, request_provider, request_model)
 
     lua_thread.create(function()
         local startedAt = NowMilliseconds()
@@ -648,10 +655,10 @@ local function SendRequest(cmd, mode, text, on_done, on_err)
                 local r = http_queue[id]
                 http_queue[id] = nil
                 if r.err then
-                    if on_err then on_err(r.err) end
+                    reportError(r.err)
                 elseif r.text then
                     if r.text:match("^ERROR:") then
-                        if on_err then on_err(r.text:sub(7)) end
+                        reportError(r.text:sub(7))
                     else
                         local val = ExtractContent(r.text)
                         if val and val ~= "" then
@@ -659,7 +666,7 @@ local function SendRequest(cmd, mode, text, on_done, on_err)
                             pcall(function() decoded = u8:decode(val) end)
                             if on_done then on_done(decoded) end
                         else
-                            if on_err then on_err("Parse error: " .. r.text:sub(1,80)) end
+                            reportError("Parse error: " .. r.text:sub(1,80))
                         end
                     end
                 end
@@ -667,7 +674,7 @@ local function SendRequest(cmd, mode, text, on_done, on_err)
             end
             if NowMilliseconds() - startedAt >= (TIMEOUT + 2) * 1000 then
                 http_queue[id] = nil
-                if on_err then on_err("Timeout") end
+                reportError("Timeout")
                 return
             end
             wait(0)
@@ -708,18 +715,27 @@ local function SendToServer(multi, cb)
                 or  "No responses - try again"
             if cb then cb() end
         end,
-        function(err)
+        function(err, request_info)
             is_loading = false
             local err_str = tostring(err)
-            -- rotate model on rate limit OR decommissioned model
-            if err_str:find("Rate limit") or err_str:find("rate_limit")
-            or err_str:find("decommissioned") or err_str:find("does not exist") then
-                local active_models = USE_OR and MODELS_OR or MODELS
+            -- Rotate only if this failed request still belongs to the active
+            -- provider/model. A late response must not alter a newer selection.
+            local selectionUnchanged = request_info
+                and request_info.use_or == USE_OR
+                and request_info.model == MODEL
+            local isModelAvailabilityError = err_str:find("Rate limit")
+                or err_str:find("rate_limit")
+                or err_str:find("decommissioned")
+                or err_str:find("does not exist")
+            if isModelAvailabilityError and selectionUnchanged then
+                local active_models = request_info.use_or and MODELS_OR or MODELS
                 model_idx = model_idx + 1
                 if model_idx > #active_models then model_idx = 1 end
                 MODEL = active_models[model_idx]
                 status_msg = "Rate limit - switching to: " .. MODEL
                 Say("Rate limit - trying: " .. MODEL)
+            elseif isModelAvailabilityError then
+                status_msg = "Request failed for the previous provider/model selection."
             else
                 status_msg = "Error: " .. err_str:sub(1, 60)
             end

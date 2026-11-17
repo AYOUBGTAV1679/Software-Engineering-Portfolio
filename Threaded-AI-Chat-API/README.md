@@ -23,7 +23,7 @@ The script moves HTTP work into a worker created through the `lanes` threading l
 - UI windows and commands for chat, character settings, knowledge bases, saved replies, and history.
 - A focused JSON response extractor for the response fields consumed by this script.
 
-Provider selection is manual; the implementation does not automatically fail over from one provider to the other. Model rotation is limited to the model list for the provider currently selected.
+Provider selection is manual; the implementation does not automatically fail over from one provider to the other. Model rotation is limited to the model list for the provider currently selected. Each request retains the provider and model it started with; a late error only rotates the model when that same selection is still active, so switching providers while a request is pending cannot redirect its endpoint/key or mutate the newly selected provider's model.
 
 ## Provider configuration
 
