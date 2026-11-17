@@ -1,0 +1,83 @@
+name: Validate Lua Projects
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '3D-Model-Loader/**'
+      - 'Crash-Lag-Monitor/**'
+      - 'Lua-Code-Checker/**'
+      - 'Coordinate-Lookup-Tool/**'
+      - 'Network-Session-Recorder/**'
+      - 'Scoreboard-GIF-Decoder/**'
+      - 'Threaded-AI-Chat-API/**'
+      - '.github/workflows/validate-lua-projects.yml'
+  pull_request:
+    paths:
+      - '3D-Model-Loader/**'
+      - 'Crash-Lag-Monitor/**'
+      - 'Lua-Code-Checker/**'
+      - 'Coordinate-Lookup-Tool/**'
+      - 'Network-Session-Recorder/**'
+      - 'Scoreboard-GIF-Decoder/**'
+      - 'Threaded-AI-Chat-API/**'
+      - '.github/workflows/validate-lua-projects.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  syntax-and-fixture:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Lua 5.4
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes lua5.4
+
+      - name: Parse all Lua project files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' lua_files < <(
+            find \
+              3D-Model-Loader \
+              Crash-Lag-Monitor \
+              Lua-Code-Checker \
+              Coordinate-Lookup-Tool \
+              Network-Session-Recorder \
+              Scoreboard-GIF-Decoder \
+              Threaded-AI-Chat-API \
+              -type f -name '*.lua' -print0 | sort -z
+          )
+
+          if [ "${#lua_files[@]}" -ne 14 ]; then
+            printf 'Expected 14 Lua files, found %s\n' "${#lua_files[@]}"
+            exit 1
+          fi
+
+          for file in "${lua_files[@]}"; do
+            luac5.4 -p "$file"
+            printf 'Syntax OK: %s\n' "$file"
+          done
+
+      - name: Check Lua Code Checker fixture output
+        shell: bash
+        run: |
+          set +e
+          output="$(lua5.4 Lua-Code-Checker/lua_code_checker.lua Lua-Code-Checker/tests/sample_bad.lua 2>&1)"
+          status=$?
+          set -e
+
+          printf '%s\n' "$output"
+
+          # The fixture intentionally contains findings, so exit code 1 is expected.
+          if [ "$status" -ne 1 ]; then
+            printf 'Unexpected checker exit code: %s\n' "$status"
+            exit 1
+          fi
+
+          grep -F 'Scanned 1 file(s): 3 error(s), 2 warning(s), 0 info.' <<< "$output"
