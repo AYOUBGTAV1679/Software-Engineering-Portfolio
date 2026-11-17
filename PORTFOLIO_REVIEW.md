@@ -1,6 +1,6 @@
 # Portfolio Review and Verification Notes
 
-This note records the checks performed on the seven Lua-based project sources in this portfolio, alongside the separately documented Aegis application. It separates syntax/static checks from integration tests that require each project's target host or external service. It separates syntax/static checks from integration tests that require each project's target host or external service.
+This note records the checks performed on the seven Lua-based project sources in this portfolio, alongside the separately documented Aegis application. It separates syntax/static checks from integration tests that require each project's target host or external service.
 
 ## Changes made
 
@@ -130,3 +130,10 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - GitHub Actions run [#44120155848](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120155848) completed successfully on commit `695f9b0`.
 - All 15 tracked Lua files parsed with Lua 5.4; the Lua Code Checker fixture produced its expected 3 errors and 3 warnings; the focused regression script passed.
 - The run validates syntax and the checker's included regression cases. It does not execute the GIF decoder against a conformance corpus, compile the optional native video bridge, exercise the host-specific Lua scripts, or send a live AI provider request.
+
+
+## Additional parser and worker failure checks
+
+- GIF image descriptors that extend outside the logical screen are rejected instead of silently clipped. Decoded color indices that are absent from the selected global/local palette are rejected instead of silently leaving pixels transparent.
+- The Threaded AI polling coroutine now checks the retained lane's status. A lane ending in an error, cancellation, or kill state is surfaced as a worker error rather than waiting until the full request deadline.
+- These are source-level checks. The GIF decoder still needs a generated valid/malformed fixture corpus, and the AI worker lifecycle still needs integration testing with the exact Lua Lanes and HTTP module versions used by the target host.

@@ -589,6 +589,9 @@ local function gifDecodeFile(path)
 			if not imgPacked or imgW <= 0 or imgH <= 0 or imgW * imgH > 4000000 then
 				return nil, "unsupported or truncated image descriptor"
 			end
+			if imgLeft + imgW > screenW or imgTop + imgH > screenH then
+				return nil, "image descriptor extends beyond the logical screen"
+			end
 			totalFramePixels = totalFramePixels + (screenW * screenH)
 			if totalFramePixels > MAX_TOTAL_FRAME_PIXELS then
 				return nil, "GIF exceeds the total decoded-frame pixel budget"
@@ -643,6 +646,9 @@ local function gifDecodeFile(path)
 						local colorIndex = indices[row * imgW + col + 1]
 						if colorIndex and not (gcTransparentIndex and colorIndex == gcTransparentIndex) then
 							local px = palette[colorIndex]
+							if not px then
+								return nil, "decoded color index is outside the active palette"
+							end
 							if px then
 								local cx, cy = imgLeft + col, imgTop + row
 								if cx >= 0 and cx < screenW and cy >= 0 and cy < screenH then

@@ -14,6 +14,7 @@ The Lua decoder handles:
 - Global and local color tables, with bounds checks for truncated palette data.
 - Graphic control extensions and image descriptors, including validation of control-block size, terminators, and extension sub-block boundaries.
 - GIF87a/GIF89a signature validation and a required trailer marker; unknown block markers and incomplete files are rejected.
+- Image rectangles must fit inside the logical screen, and decoded palette indices must exist in the active color table.
 - LZW decompression with variable-width codes from 2 to 12 bits. Invalid or truncated code streams are rejected, and decoded output is capped at the image's declared pixel count.
 - Clear and end-of-information codes and dictionary growth.
 - Frame transparency, composition, and disposal handling.

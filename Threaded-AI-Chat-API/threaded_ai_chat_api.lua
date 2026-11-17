@@ -543,6 +543,20 @@ local function DoHttpRequest(cmd, mode, text, request_id)
                     http_queue[request_id] = { text = tostring(val or "") }
                     return
                 end
+                local lane = http_lanes[request_id]
+                if lane then
+                    local laneStatus = lane.status
+                    if laneStatus == "error" or laneStatus == "cancelled" or laneStatus == "killed" then
+                        local laneError = laneStatus
+                        if laneStatus == "error" then
+                            local _, joinError = lane:join(0)
+                            laneError = tostring(joinError or "worker failed")
+                        end
+                        http_lanes[request_id] = nil
+                        http_queue[request_id] = { err = "HTTP worker " .. laneStatus .. ": " .. laneError }
+                        return
+                    end
+                end
                 if NowMilliseconds() - startedAt >= TIMEOUT * 1000 then
                     local lane = http_lanes[request_id]
                     http_lanes[request_id] = nil
