@@ -18,6 +18,11 @@ local function updateCache()
         pcall(function()
             if sampIsPlayerConnected(i) then
                 local name = sampGetPlayerNickname(i)
+                -- Player IDs can be reused. Do not keep coordinates belonging
+                -- to a different nickname when a slot is reassigned.
+                if cache[i] and cache[i].name ~= name then
+                    cache[i] = nil
+                end
                 local res, ped = sampGetCharHandleBySampPlayerId(i)
                 if res and doesCharExist(ped) then
                     local x, y, z = getCharCoordinates(ped)
@@ -46,6 +51,17 @@ end
 -- Teleport core
 -- ==============================
 local function teleportToId(id)
+    -- The cache and update loop use the inclusive player-ID range 0..999.
+    -- Reject fractional/out-of-range values before calling host APIs.
+    if type(id) ~= "number" or id ~= math.floor(id) or id < 0 or id > 999 then
+        if isSampAvailable() then
+            sampAddChatMessage("[.GOTO] Player ID must be an integer from 0 to 999.", -1)
+        else
+            print("[.GOTO] Player ID must be an integer from 0 to 999.")
+        end
+        return
+    end
+
     local sampOk = isSampAvailable() and sampIsLocalPlayerSpawned()
 
     if sampOk then

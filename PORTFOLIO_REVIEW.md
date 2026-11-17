@@ -57,3 +57,9 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Extended the intentional fixture to cover a misleading nested module name and added focused Lua regression tests. CI now checks **15 Lua files**, the expected fixture summary (**3 errors, 3 warnings, 0 info**), and the focused regression assertions.
 - Clarified interpreter compatibility: the implementation uses `goto`, which is native in Lua 5.2+ and supported by LuaJIT 2.1; it should not be advertised as compatible with a plain Lua 5.1 interpreter.
 - CI follow-up: the first regression-test invocation ran from the repository root, so Lua's default module path could not resolve the checker modules. The workflow now runs that test from the project directory, matching its module layout.
+
+## Coordinate Lookup Tool input and cache audit
+
+- Added an explicit integer player-ID guard for the supported scan/cache range (0–999). Invalid, fractional, negative, and out-of-range command values are rejected before host lookup or teleport functions are called.
+- When a connected player slot is observed with a different nickname, the prior cached entry for that slot is invalidated before refreshing its coordinates. This reduces the risk of replay navigation using coordinates associated with a previous visible occupant of the same ID.
+- The cache remains session-only and keyed by numeric player ID. Nickname comparison cannot prove identity when names are reused, and cached positions can still be stale. Runtime behavior still requires validation in the target host.

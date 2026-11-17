@@ -19,7 +19,7 @@ The cache is session memory. It is not a persistent coordinate database, and the
 .goto <player_id>
 ```
 
-The command validates the numeric ID and reports when the target is unavailable or its position cannot be resolved.
+The command accepts an integer player ID from 0 through 999 and rejects fractional or out-of-range values before calling host APIs. It reports when the target is unavailable or its position cannot be resolved.
 
 ## Correctness detail: protected multi-value returns
 
@@ -42,4 +42,4 @@ Copy `coordinate_lookup_tool.lua` into the host's MoonLoader scripts directory a
 
 ## Limitations
 
-This is an environment-specific navigation utility, not a general GPS or mapping library. Cached positions may become stale, disappear when the script session ends, or be unavailable for participants that were never observed. A successful coordinate lookup also does not guarantee that moving to the coordinate is safe or valid in every host state.
+This is an environment-specific navigation utility, not a general GPS or mapping library. The cache is keyed by player ID; when an active slot is observed with a different nickname, its previous cached entry is discarded to avoid carrying coordinates across a visible slot reassignment. Cached positions may still become stale, disappear when the script session ends, or be unavailable for participants that were never observed. A successful coordinate lookup also does not guarantee that moving to the coordinate is safe or valid in every host state.
