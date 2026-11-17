@@ -55,3 +55,4 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Corrected tokenizer line tracking when a short string contains an escaped newline.
 - Made command-line module lookup accept both Unix and Windows path separators when the checker is invoked through a path.
 - Extended the intentional fixture to cover a misleading nested module name and added focused Lua regression tests. CI now checks **15 Lua files**, the expected fixture summary (**3 errors, 3 warnings, 0 info**), and the focused regression assertions.
+- Clarified interpreter compatibility: the implementation uses `goto`, which is native in Lua 5.2+ and supported by LuaJIT 2.1; it should not be advertised as compatible with a plain Lua 5.1 interpreter.

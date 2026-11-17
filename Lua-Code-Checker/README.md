@@ -48,7 +48,7 @@ Run the included sample with:
 lua lua_code_checker.lua tests/sample_bad.lua
 ```
 
-The GitHub Actions workflow runs this fixture with Lua 5.4, expects exit code `1` because the findings are intentional, and checks the exact summary: `3 error(s), 2 warning(s), 0 info`. This is a continuously enforced regression check for this single fixture. It is not a comprehensive comparison corpus and does not establish overall analyzer accuracy.
+The GitHub Actions workflow runs this fixture with Lua 5.4, expects exit code `1` because the findings are intentional, and checks the exact summary: `3 error(s), 3 warning(s), 0 info`. It also runs focused regression checks for nested module allowlisting and source-line tracking after escaped newlines. These checks are not a comprehensive comparison corpus and do not establish overall analyzer accuracy.
 
 ## Project layout
 
@@ -63,11 +63,12 @@ rules/
   unverified_require.lua
 tests/
   sample_bad.lua
+  test_checker_regressions.lua
 ```
 
 ## Requirements and limitations
 
-- Lua 5.1–5.4
+- Lua 5.2–5.4, or LuaJIT 2.1 (which supports the `goto` syntax used internally)
 - No external Lua dependencies for the checker itself
 
 Because analysis is tokenizer- and pattern-based, dynamic code generation, unusual syntax, complex control flow, and project-specific module resolution may produce missed findings or false positives. Review every diagnostic and every generated fixed copy before using it.
