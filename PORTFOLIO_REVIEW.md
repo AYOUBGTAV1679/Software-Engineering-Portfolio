@@ -14,10 +14,10 @@ This note records the checks performed on the seven Lua-based project sources in
 
 ## Verification performed
 
-- Parsed all 17 tracked Lua source, module, and test files in the seven projects with Lua 5.4: **17 passed, 0 syntax errors** in GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189).
+- Parsed all 17 tracked Lua source, module, and test files in the seven projects with Lua 5.4: **17 passed, 0 syntax errors** in GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011).
 - Executed Lua Code Checker's included `tests/sample_bad.lua` fixture with the bundled checker: **3 errors and 3 warnings**, matching the fixture's expected output. The CI job checks both the expected exit code and the exact summary. The focused Lua Code Checker regression script also passed its namespace allowlist and escaped-newline line-number assertions. The new Scoreboard GIF regression suite builds GIF data in memory and checks valid GIF87a/GIF89a inputs, graphic-control extension handling, missing trailers, truncated extension/image blocks, logical-screen bounds, palette-index validation, invalid LZW references, missing LZW end codes, missing color tables, and unknown block markers.
 - Ran the checker across the 15 Lua files: it reported the intentional findings in `sample_bad.lua` plus heuristic warnings in some project files. These warnings need manual review; the checker is pattern-based and does not establish that each warning is a defect.
-- Added `.github/workflows/validate-lua-projects.yml` to parse all 15 Lua files, validate the analyzer fixture, and run focused regression checks on pushes and pull requests. GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189) completed successfully.
+- Added `.github/workflows/validate-lua-projects.yml` to parse all 15 Lua files, validate the analyzer fixture, and run focused regression checks on pushes and pull requests. GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011) completed successfully.
 
 ## Not verified in this environment
 
@@ -127,7 +127,7 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 
 ## Latest validation after the November 17 source updates
 
-- GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189) completed successfully on commit `695f9b0`.
+- GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011) completed successfully on commit `695f9b0`.
 - All 15 tracked Lua files parsed with Lua 5.4; the Lua Code Checker fixture produced its expected 3 errors and 3 warnings; the focused regression script passed.
 - The run validates syntax and the checker's included regression cases. It does not execute the GIF decoder against a conformance corpus, compile the optional native video bridge, exercise the host-specific Lua scripts, or send a live AI provider request.
 
@@ -145,7 +145,7 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 ## Final CI check for the latest source commit
 
 - Commit `701f3a2` scopes Threaded AI cache entries by provider and model, in addition to the worker lifecycle and GIF parser validation updates in its parent commit.
-- GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189) completed successfully: all 15 tracked Lua files parsed, the analyzer fixture matched its expected 3 errors and 3 warnings, and the focused regression tests passed.
+- GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011) completed successfully: all 15 tracked Lua files parsed, the analyzer fixture matched its expected 3 errors and 3 warnings, and the focused regression tests passed.
 - These checks do not execute MoonLoader runtime paths, GIF conformance fixtures, native video compilation, or live provider requests.
 
 
