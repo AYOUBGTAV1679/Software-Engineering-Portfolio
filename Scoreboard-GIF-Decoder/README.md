@@ -29,7 +29,7 @@ The project README supplied with the source describes a reference encoder/decode
 
 ## Video bridge status
 
-`video_bridge.c` contains a proposed FFmpeg-based native bridge for frame decoding. It is explicitly marked in the source as not compiled or tested. The Lua integration also calls `imgui.CreateTextureFromRawBytes`, which is marked as a placeholder that must be matched to the actual ImGui binding. Consequently, MP4/video playback is experimental and should not be presented as a working feature. The current dependable media path documented here is GIF decoding and playback.
+`video_bridge.c` contains a proposed FFmpeg-based native bridge for frame decoding. It is explicitly marked in the source as not compiled or tested. The Lua integration also calls `imgui.CreateTextureFromRawBytes`, which is marked as a placeholder that must be matched to the actual ImGui binding. Consequently, MP4/video playback is experimental and should not be presented as a working feature. When the native bridge is present, the Lua side also rejects null handles and frame dimensions above 4,000,000 pixels before allocating a raw RGBA frame buffer. The current dependable media path documented here is GIF decoding and playback.
 
 ## Setup and requirements
 

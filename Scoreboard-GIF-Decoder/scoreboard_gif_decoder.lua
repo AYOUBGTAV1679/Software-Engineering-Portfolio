@@ -362,7 +362,7 @@ function loadVideoBackground(path)
 	end
 
 	local handle = videoLib.video_open(path)
-	if handle == nil then
+	if handle == nil or (ffiOk and ffi and handle == ffi.NULL) then
 		customImgLoadError = true
 		if notf then
 			notf.addNotification("Could not open video file: " .. path, 6)
@@ -370,10 +370,22 @@ function loadVideoBackground(path)
 		return false
 	end
 
+	local width = tonumber(videoLib.video_get_width(handle))
+	local height = tonumber(videoLib.video_get_height(handle))
+	if not width or not height or width <= 0 or height <= 0
+			or width * height > 4000000 then
+		videoLib.video_close(handle)
+		customImgLoadError = true
+		if notf then
+			notf.addNotification("Video dimensions are invalid or exceed the 4,000,000-pixel limit.", 6)
+		end
+		return false
+	end
+
 	videoPlayback.path = path
 	videoPlayback.handle = handle
-	videoPlayback.width = videoLib.video_get_width(handle)
-	videoPlayback.height = videoLib.video_get_height(handle)
+	videoPlayback.width = width
+	videoPlayback.height = height
 	videoPlayback.nextFrameDue = 0
 	return true
 end

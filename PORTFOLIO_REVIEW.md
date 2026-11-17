@@ -100,3 +100,6 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 
 
 - Replaced process-CPU-time clock reads for GIF frame delays, experimental video frame scheduling, image transitions, and automatic background cycling with the host game timer in seconds. A one-second-resolution system clock is used only if the host timer is unavailable. This corrects elapsed-time measurement but does not validate the experimental video bridge.
+
+
+- Added defensive handling for the experimental video bridge: null native handles are rejected, and invalid or oversized dimensions are closed and rejected before the Lua side allocates a raw RGBA frame buffer. The bridge remains uncompiled and untested; this guard is not evidence that video playback works.
