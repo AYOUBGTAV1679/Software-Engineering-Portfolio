@@ -131,7 +131,8 @@ local function gifDecodeData(data)
 	local screenW = u16le(data, pos); pos = pos + 2
 	local screenH = u16le(data, pos); pos = pos + 2
 	local packed = u8b(data, pos); pos = pos + 1
-	pos = pos + 2 -- background color index + pixel aspect ratio
+	local backgroundIndex = u8b(data, pos); pos = pos + 1
+	pos = pos + 1 -- pixel aspect ratio
 	if screenW <= 0 or screenH <= 0 or screenW * screenH > 4000000 then
 		return nil, "unsupported gif size"
 	end
@@ -147,6 +148,14 @@ local function gifDecodeData(data)
 		for i = 0, gctEntries - 1 do
 			globalPalette[i] = {u8b(data, pos), u8b(data, pos + 1), u8b(data, pos + 2)}
 			pos = pos + 3
+		end
+	end
+
+	local backgroundColor = nil
+	if globalPalette then
+		backgroundColor = globalPalette[backgroundIndex]
+		if not backgroundColor then
+			return nil, "background color index is outside the global color table"
 		end
 	end
 
@@ -284,13 +293,21 @@ local function gifDecodeData(data)
 			frames[#frames + 1] = {rgba = frameRGBA, delay = math.max(gcDelay, 2) / 100}
 
 			if gcDisposal == 2 then
+				-- Restore the affected rectangle to the logical-screen background color.
 				for row = 0, imgH - 1 do
 					for col = 0, imgW - 1 do
 						local cx, cy = imgLeft + col, imgTop + row
 						if cx >= 0 and cx < screenW and cy >= 0 and cy < screenH then
 							local off = (cy * screenW + cx) * 4
-							canvas[off + 1] = 0; canvas[off + 2] = 0
-							canvas[off + 3] = 0; canvas[off + 4] = 0
+							if backgroundColor then
+								canvas[off + 1] = backgroundColor[1]
+								canvas[off + 2] = backgroundColor[2]
+								canvas[off + 3] = backgroundColor[3]
+								canvas[off + 4] = 255
+							else
+								canvas[off + 1] = 0; canvas[off + 2] = 0
+								canvas[off + 3] = 0; canvas[off + 4] = 0
+							end
 						end
 					end
 				end

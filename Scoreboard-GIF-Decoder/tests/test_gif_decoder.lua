@@ -156,4 +156,21 @@ expectFixture(
 	{0.1, 0.2, 0.3}
 )
 
+
+local badBackgroundHeader = gifHeader("GIF89a", true)
+badBackgroundHeader = badBackgroundHeader:sub(1, 11) .. string.char(255) .. badBackgroundHeader:sub(13)
+expectInvalid(
+	"background index outside global color table",
+	badBackgroundHeader .. imageBlock() .. string.char(0x3B),
+	"background color index is outside the global color table"
+)
+
+expectFixture(
+	"three-frame animation with restore-to-background disposal",
+	readFixture("tests/fixtures/animation_restore_background.gif"),
+	8, 8,
+	{1539460209, 1450908192, 1680938718},
+	{0.1, 0.2, 0.3}
+)
+
 print(string.format("GIF decoder regression suite: %d checks passed", passed))
