@@ -27,7 +27,17 @@ This pipeline performs the parsing and decompression itself instead of delegatin
 
 The development notes identify a boundary condition in LZW code-width growth as an important defect. The code's width transition must account for the decoder learning dictionary entries one step after the encoder creates them; an off-by-one change can desynchronize the remaining bitstream even when the first few pixels look correct.
 
-The project README supplied with the source describes a reference encoder/decoder exercise used during development. There is no independent automated test suite for the GIF decoder in this repository, so those historical results should not be interpreted as a currently repeatable CI test. A durable regression suite with generated GIF fixtures would be the next validation improvement.
+The decoder now lives in a small pure-Lua core module, separate from the host-specific scoreboard UI and file-cache layer. This separation allows the parser to be exercised under standard Lua without loading MoonLoader, ImGui, or SAMPFUNCS. The regression suite builds compact GIF byte streams in memory and checks valid GIF87a/GIF89a files, a graphic-control extension, missing trailers, truncated extensions and image sub-blocks, out-of-bounds frames, invalid palette indices, invalid LZW references, missing LZW end codes, missing color tables, and unknown top-level markers. These are targeted regression fixtures, not a complete GIF conformance corpus.
+
+## Decoder regression tests
+
+Run the standalone checks from this project directory with Lua 5.4:
+
+```sh
+lua5.4 tests/test_gif_decoder.lua
+```
+
+The test suite exercises both accepted GIF signatures and the malformed-input boundaries listed above. It does not replace validation against a broad third-party GIF conformance corpus or testing in the target MoonLoader host.
 
 ## Video bridge status
 
@@ -39,7 +49,7 @@ The project README supplied with the source describes a reference encoder/decode
 - SAMPFUNCS and the ImGui integration used by the host
 - LuaJIT FFI is needed only for the experimental native video bridge
 
-Copy `scoreboard_gif_decoder.lua` into the host's MoonLoader scripts directory. The default interface toggle is **F9**; it can be changed through the settings panel.
+Copy `scoreboard_gif_decoder.lua` into the host's MoonLoader scripts directory and `gif_decoder_core.lua` into the host's `moonloader/lib` directory so Lua can resolve `require 'gif_decoder_core'`. The test harness is for development/CI and does not need to be installed in the game. The default interface toggle is **F9**; it can be changed through the settings panel.
 
 ## Limitations
 

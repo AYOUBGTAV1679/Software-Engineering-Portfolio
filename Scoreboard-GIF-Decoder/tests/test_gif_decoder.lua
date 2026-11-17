@@ -1,0 +1,104 @@
+package.path = "./?.lua;" .. package.path
+
+local decoder = require("gif_decoder_core")
+
+local function u16(value)
+	return string.char(value % 256, math.floor(value / 256) % 256)
+end
+
+local function packCodes(codes)
+	local bytes, current, used = {}, 0, 0
+	for _, code in ipairs(codes) do
+		for bit = 0, 2 do
+			if math.floor(code / (2 ^ bit)) % 2 == 1 then
+				current = current + (2 ^ used)
+			end
+			used = used + 1
+			if used == 8 then
+				bytes[#bytes + 1] = string.char(current)
+				current, used = 0, 0
+			end
+		end
+	end
+	if used > 0 then bytes[#bytes + 1] = string.char(current) end
+	return table.concat(bytes)
+end
+
+local function gifHeader(signature, withPalette)
+	return signature .. u16(1) .. u16(1)
+		.. string.char(withPalette == false and 0 or 0x80, 0, 0)
+		.. (withPalette == false and "" or string.char(0, 0, 0, 255, 255, 255))
+end
+
+local function imageBlock(options)
+	options = options or {}
+	local payload = options.payload or packCodes(options.codes or {4, 1, 5})
+	local left, top = options.left or 0, options.top or 0
+	local width, height = options.width or 1, options.height or 1
+	local descriptor = string.char(0x2C) .. u16(left) .. u16(top)
+		.. u16(width) .. u16(height) .. string.char(0)
+	local lzw = string.char(options.minCodeSize or 2, #payload) .. payload .. string.char(0)
+	return descriptor .. lzw
+end
+
+local function validGif(signature, options)
+	options = options or {}
+	local header = gifHeader(signature or "GIF89a", options.withPalette)
+	local extension = options.extension or ""
+	local image = options.image or imageBlock(options)
+	local trailer = options.trailer == false and "" or string.char(0x3B)
+	return header .. extension .. image .. trailer
+end
+
+local passed = 0
+local function expectValid(name, data)
+	local result, err = decoder.decode(data)
+	assert(result, name .. " unexpectedly failed: " .. tostring(err))
+	assert(result.width == 1 and result.height == 1, name .. " returned incorrect dimensions")
+	assert(#result.frames == 1, name .. " returned an incorrect frame count")
+	assert(result.frames[1].rgba[1] == 255
+		and result.frames[1].rgba[2] == 255
+		and result.frames[1].rgba[3] == 255
+		and result.frames[1].rgba[4] == 255, name .. " decoded the wrong pixel")
+	passed = passed + 1
+	print("PASS " .. name)
+end
+
+local function expectInvalid(name, data, expected)
+	local result, err = decoder.decode(data)
+	assert(not result, name .. " was unexpectedly accepted")
+	assert(tostring(err):find(expected, 1, true),
+		name .. " returned an unexpected error: " .. tostring(err))
+	passed = passed + 1
+	print("PASS " .. name)
+end
+
+expectValid("GIF87a one-pixel image", validGif("GIF87a"))
+expectValid("GIF89a one-pixel image", validGif("GIF89a"))
+expectValid("GIF89a with graphic-control extension",
+	validGif("GIF89a", {extension = string.char(0x21, 0xF9, 4, 0, 10, 0, 0, 0)}))
+
+expectInvalid("missing trailer", validGif("GIF89a", {trailer = false}), "missing GIF trailer")
+expectInvalid("truncated graphic-control extension",
+	gifHeader("GIF89a", true) .. string.char(0x21, 0xF9, 4, 0), "graphic control extension")
+expectInvalid("truncated extension sub-block",
+	gifHeader("GIF89a", true) .. string.char(0x21, 0xFE, 3, 65), "truncated extension sub-block")
+expectInvalid("frame outside logical screen",
+	validGif("GIF89a", {left = 1}), "extends beyond the logical screen")
+expectInvalid("palette index outside active table",
+	validGif("GIF89a", {codes = {4, 2, 5}}), "outside the active palette")
+expectInvalid("invalid LZW dictionary reference",
+	validGif("GIF89a", {codes = {4, 7, 5}}), "invalid LZW dictionary reference")
+expectInvalid("truncated LZW stream",
+	validGif("GIF89a", {codes = {4, 1}}), "truncated LZW stream")
+expectInvalid("image without a color table",
+	validGif("GIF89a", {withPalette = false}), "image has no color table")
+expectInvalid("unknown top-level block",
+	gifHeader("GIF89a", true) .. string.char(0x00, 0x3B), "unknown GIF block marker")
+expectInvalid("truncated image data sub-block",
+	gifHeader("GIF89a", true)
+		.. string.char(0x2C) .. u16(0) .. u16(0) .. u16(1) .. u16(1)
+		.. string.char(0, 2, 3, 1),
+	"truncated image data sub-block")
+
+print(string.format("GIF decoder regression suite: %d checks passed", passed))

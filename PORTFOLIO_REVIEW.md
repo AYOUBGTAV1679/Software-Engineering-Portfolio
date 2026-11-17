@@ -14,8 +14,8 @@ This note records the checks performed on the seven Lua-based project sources in
 
 ## Verification performed
 
-- Parsed all 15 tracked Lua source and test files in the seven projects with Lua 5.4: **15 passed, 0 syntax errors** in GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189).
-- Executed Lua Code Checker's included `tests/sample_bad.lua` fixture with the bundled checker: **3 errors and 3 warnings**, matching the fixture's expected output. The CI job checks both the expected exit code and the exact summary. The focused regression script also passed its namespace allowlist and escaped-newline line-number assertions.
+- Parsed all 17 tracked Lua source, module, and test files in the seven projects with Lua 5.4: **17 passed, 0 syntax errors** in GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189).
+- Executed Lua Code Checker's included `tests/sample_bad.lua` fixture with the bundled checker: **3 errors and 3 warnings**, matching the fixture's expected output. The CI job checks both the expected exit code and the exact summary. The focused Lua Code Checker regression script also passed its namespace allowlist and escaped-newline line-number assertions. The new Scoreboard GIF regression suite builds GIF data in memory and checks valid GIF87a/GIF89a inputs, graphic-control extension handling, missing trailers, truncated extension/image blocks, logical-screen bounds, palette-index validation, invalid LZW references, missing LZW end codes, missing color tables, and unknown block markers.
 - Ran the checker across the 15 Lua files: it reported the intentional findings in `sample_bad.lua` plus heuristic warnings in some project files. These warnings need manual review; the checker is pattern-based and does not establish that each warning is a defect.
 - Added `.github/workflows/validate-lua-projects.yml` to parse all 15 Lua files, validate the analyzer fixture, and run focused regression checks on pushes and pull requests. GitHub Actions run [#44120765189](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44120765189) completed successfully.
 
@@ -40,7 +40,7 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 2. Run each MoonLoader project in its supported host and record reproducible smoke-test steps and results.
 3. Launch the packaged Aegis application on a Windows device and verify startup, scanning, report export, and shutdown.
 4. Exercise provider selection with test credentials while keeping secrets out of the repository.
-5. Add generated GIF fixtures and native bridge build checks before describing the video path as supported.
+5. Expand GIF testing with a broader external conformance corpus and verify texture loading in the target host; add native bridge build checks before describing the video path as supported.
 
 ## Crash Guard API and timing audit
 
@@ -78,7 +78,7 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Hardened the LZW decoder to reject invalid dictionary references, truncated streams without an end code, and decoded output that does not exactly match the image descriptor's pixel count. It stops before appending output beyond the declared count.
 - Added validation for GIF LZW minimum code size, missing color tables, truncated global/local palettes, truncated image sub-blocks, and invalid image descriptors.
 - Added an aggregate decoded-frame pixel budget in addition to logical-screen and per-image dimension checks. The README documents that this bounds allocations but may reject long animations.
-- The changes have not yet been exercised against a generated GIF regression corpus or the target host's texture-loading path. CI syntax validation is not a substitute for GIF conformance tests.
+- The decoder now has a repeatable pure-Lua regression suite with generated valid and malformed GIF inputs, executed by the Lua validation workflow. This is a focused regression set rather than a complete external GIF conformance corpus; the target host's texture-loading path remains unverified.
 
 
 ## Threaded AI Chat API timeout and worker error audit

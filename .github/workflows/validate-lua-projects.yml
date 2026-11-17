@@ -54,8 +54,8 @@ jobs:
               -type f -name '*.lua' -print0 | sort -z
           )
 
-          if [ "${#lua_files[@]}" -ne 15 ]; then
-            printf 'Expected 15 Lua files, found %s\n' "${#lua_files[@]}"
+          if [ "${#lua_files[@]}" -ne 17 ]; then
+            printf 'Expected 17 Lua files, found %s\n' "${#lua_files[@]}"
             exit 1
           fi
 
@@ -84,3 +84,6 @@ jobs:
 
       - name: Run Lua Code Checker regression tests
         run: cd Lua-Code-Checker && lua5.4 tests/test_checker_regressions.lua
+
+      - name: Run GIF decoder regression tests
+        run: cd Scoreboard-GIF-Decoder && lua5.4 tests/test_gif_decoder.lua
