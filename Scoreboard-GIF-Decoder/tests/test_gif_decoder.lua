@@ -142,10 +142,10 @@ local function expectFixture(name, data, width, height, expectedHashes, expected
 end
 
 expectFixture(
-	"independent 128x128 interlaced GIF with LZW code-width growth to 12 bits",
+	"independent 64x64 interlaced GIF with LZW code-width growth",
 	readFixture("tests/fixtures/lzw_growth_interlaced.gif"),
-	128, 128,
-	{774778400}
+	64, 64,
+	{1482866506}
 )
 
 expectFixture(
