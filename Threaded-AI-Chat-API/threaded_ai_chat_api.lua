@@ -12,6 +12,7 @@ script_version("10.0")
 script_author("Sam Wilson")
 
 require("sampfuncs")
+local ClassifyProviderError = require 'provider_error_classifier'
 local imgui  = require("imgui")
 local io     = require("io")
 local os     = require("os")
@@ -624,26 +625,6 @@ local function ExtractContent(raw)
         end
     end
     return table.concat(buf)
-end
-
--- Classify provider error payloads before treating non-chat-completion JSON as a parse failure.
--- Both providers return structured error bodies instead of a "choices[].message.content" field.
-local function ClassifyProviderError(raw)
-    local lower = tostring(raw or ""):lower()
-    if lower:find("rate limit", 1, true)
-        or lower:find("rate_limit", 1, true)
-        or lower:find("too many requests", 1, true) then
-        return "Rate limit: provider rejected the request"
-    end
-    if lower:find("decommissioned", 1, true)
-        or lower:find("model_not_found", 1, true)
-        or lower:find("unknown model", 1, true)
-        or lower:find("model does not exist", 1, true)
-        or lower:find("does not exist", 1, true)
-        or lower:find("no endpoints found for model", 1, true) then
-        return "Model unavailable: provider rejected the selected model"
-    end
-    return nil
 end
 
 -- High-level: send request and call callback when done

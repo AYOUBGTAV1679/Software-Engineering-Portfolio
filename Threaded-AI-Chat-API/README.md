@@ -69,7 +69,17 @@ The extractor is intentionally narrow and is not a general-purpose JSON parser. 
 - A valid API key for the selected provider
 - Network access to that provider
 
-Install the dependencies, copy `threaded_ai_chat_api.lua` into the host's MoonLoader scripts directory, set the desired provider key in a private local copy, then test with a short request before enabling automatic-response behavior.
+Install the dependencies, copy `threaded_ai_chat_api.lua` into the host's MoonLoader scripts directory, and copy `provider_error_classifier.lua` into `moonloader/lib` so the script can resolve its pure error-classification helper. Set the desired provider key in a private local copy, then test with a short request before enabling automatic-response behavior.
+
+## Provider error regression tests
+
+Run the standalone classifier tests from this project directory with Lua 5.4:
+
+```sh
+lua5.4 tests/test_provider_error_classifier.lua
+```
+
+The cases cover common rate-limit and unavailable-model phrases/codes plus an unrelated authentication error. They test classification only; live provider responses still need validation with the selected service and model.
 
 ## Practical limits
 

@@ -14,7 +14,7 @@ This note records the checks performed on the seven Lua-based project sources in
 
 ## Verification performed
 
-- Parsed all 17 tracked Lua source, module, and test files in the seven projects with Lua 5.4: **17 passed, 0 syntax errors** in GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011).
+- Parsed all 19 tracked Lua source, module, and test files in the seven projects with Lua 5.4: **17 passed, 0 syntax errors** in GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011).
 - Executed Lua Code Checker's included `tests/sample_bad.lua` fixture with the bundled checker: **3 errors and 3 warnings**, matching the fixture's expected output. The CI job checks both the expected exit code and the exact summary. The focused Lua Code Checker regression script also passed its namespace allowlist and escaped-newline line-number assertions. The new Scoreboard GIF regression suite builds GIF data in memory and checks valid GIF87a/GIF89a inputs, graphic-control extension handling, missing trailers, truncated extension/image blocks, logical-screen bounds, palette-index validation, invalid LZW references, missing LZW end codes, missing color tables, and unknown block markers.
 - Ran the checker across the 15 Lua files: it reported the intentional findings in `sample_bad.lua` plus heuristic warnings in some project files. These warnings need manual review; the checker is pattern-based and does not establish that each warning is a defect.
 - Added `.github/workflows/validate-lua-projects.yml` to parse all 15 Lua files, validate the analyzer fixture, and run focused regression checks on pushes and pull requests. GitHub Actions run [#44122458011](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44122458011) completed successfully.
@@ -161,3 +161,9 @@ A syntax pass does not establish runtime correctness. The documented dependencie
 - Added a separate classification path for provider error payloads that do not contain a chat-completion content field. Recognized rate-limit, model-decommissioned, and model-not-found responses now reach the model-rotation logic instead of being reported only as generic JSON parse failures.
 - Error matching is case-insensitive and uses literal substring checks. Unknown response shapes remain visible as parse errors; this is not a complete provider-specific JSON error parser.
 - CI validates Lua syntax for this change. Live provider error responses have not been exercised in the target host.
+
+## Threaded AI provider error classifier tests
+
+- Extracted provider-error classification into a small pure-Lua module so it can be exercised without loading the MoonLoader host or making external API requests.
+- Added repeatable cases for rate-limit phrases/codes, decommissioned and missing models, missing OpenRouter endpoints, and an unrelated invalid-key error.
+- The module must be installed in `moonloader/lib` alongside the main script's documented dependencies. CI runs the classifier suite; live provider response behavior remains unverified.
