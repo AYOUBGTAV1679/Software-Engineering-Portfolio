@@ -22,7 +22,7 @@ The Aegis Windows packaging workflow previously completed [run #43928542059](htt
 
 ### 3D Model Loader — Zeno Skin Changer
 
-The source now uses the documented `loadTextureDictionary` and animation request/playback flow rather than the earlier unsupported calls. The walk-style IDs documented by the project are **0–20**. The custom DFF path still depends on an external extension exposing `loadModelInfo`; that extension and the complete custom-model path need to be identified and tested in the target host.
+The source now uses the documented `loadTextureDictionary` and animation request/playback flow rather than the earlier unsupported calls. The walk-style IDs documented by the project are **0–20**. The pending skin-load timeout and periodic UI/reapplication timers now use the host elapsed game timer instead of `os.clock()` process time; host runtime behavior still needs a smoke test. The custom DFF path still depends on an external extension exposing `loadModelInfo`; that extension and the complete custom-model path need to be identified and tested in the target host.
 
 ### Crash Guard
 

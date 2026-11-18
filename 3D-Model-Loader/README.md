@@ -31,7 +31,7 @@ moonloader/skins/<folder>/
 
 A custom entry may refer to `.dff` and `.txd` files. The generated INI includes a `[Skins]` section and an example row; keep that section header when adding entries. The script performs basic file-size checks before attempting to load binary assets. Those checks can reject obviously truncated files, but they do not prove that an asset is structurally valid or compatible.
 
-The configured walk styles use the host's `ped` animation block. No external `ped.ifp` file is required for these built-in walk styles.
+The configured walk styles use the host's built-in `ped` animation block. No external `ped.ifp` file is required for these walk styles.
 
 ## Commands
 
@@ -51,7 +51,7 @@ The configured walk styles use the host's `ped` animation block. No external `pe
 
 ## Engineering notes
 
-The implementation separates the logical model ID shown and saved in settings from the internal runtime slot used for a custom DFF. Reapplication compares the character's actual runtime model ID with that slot, avoiding repeated reload attempts caused by comparing two different identifiers. Loading is processed through a pending-state path with a timeout rather than relying on an unbounded blocking wait. Binary model and texture files are opened in binary mode before their sizes are checked.
+The implementation separates the logical model ID shown and saved in settings from the internal runtime slot used for a custom DFF. Reapplication compares the character's actual runtime model ID with that slot, avoiding repeated reload attempts caused by comparing two different identifiers. Loading is processed through a pending-state path with a timeout rather than relying on an unbounded blocking wait. Timeout, UI status, hotkey, and reapplication intervals use the host elapsed game timer, with a seconds-resolution wall-clock fallback, rather than Lua process-CPU time. Binary model and texture files are opened in binary mode before their sizes are checked.
 
 Personal settings and temporary assignments have different lifetimes: personal choices and the hotkey are stored locally, while nickname-based assignments remain in memory for the current session. These overrides are local presentation behavior; they do not modify server-side records or another user's files.
 
@@ -60,7 +60,7 @@ Personal settings and temporary assignments have different lifetimes: personal c
 - A compatible MoonLoader scripting host
 - SAMPFUNCS and the host functions used by the script
 - MoonLoader ImGui (`imgui`)
-- The optional `ped.ifp` file and custom model assets when using those features
+- Custom `.dff` and `.txd` assets when using imported custom models
 
 Copy `model_loader_3d.lua` into the host's MoonLoader scripts directory, start the host, and open the interface with `/zskin`.
 

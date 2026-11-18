@@ -20,6 +20,18 @@ script_author("Sam Wilson")
 -- FROM: _RM__PlayStable.lua lines 5-10
 local imgui = require("imgui")
 require("sampfuncs")
+
+-- NowSeconds() measures process CPU time, which can stall while the game is idle.
+-- Prefer the host's elapsed game timer and fall back to wall-clock seconds.
+local function NowSeconds()
+    if type(getGameTimer) == "function" then
+        local ok, milliseconds = pcall(getGameTimer)
+        if ok and type(milliseconds) == "number" then
+            return milliseconds / 1000
+        end
+    end
+    return os.time()
+end
 local windows_state = imgui.ImBool(false)
 imgui.Process = false
 --------------------------------------------------------------
@@ -659,7 +671,7 @@ local function ApplySkin(entry)
     -- main loop to finish this once the model is actually ready (or
     -- give up after a timeout instead of hanging forever).
     pendingSkin      = { id = id, realId = realId, entry = entry }
-    pendingLoadStart = os.clock()
+    pendingLoadStart = NowSeconds()
     Say("Loading skin: " .. entry.name .. " ...")
 end
 
@@ -708,10 +720,10 @@ local function ProcessPendingSkin()
 
         activeSkin = realId
         statusText = "Applied: " .. entry.name .. " (ID " .. realId .. ")"
-        statusExp  = os.clock() + 3
+        statusExp  = NowSeconds() + 3
         Say("Skin applied: {FFFF00}" .. entry.name .. " {FFFFFF}ID=" .. realId)
 
-    elseif os.clock() - pendingLoadStart > PENDING_SKIN_TIMEOUT then
+    elseif NowSeconds() - pendingLoadStart > PENDING_SKIN_TIMEOUT then
         local entry = pendingSkin.entry
         pendingSkin = nil
         Say("{FF4444}Skin failed to load (timed out after " .. PENDING_SKIN_TIMEOUT ..
@@ -1016,7 +1028,7 @@ function main()
 
         -- Configurable hotkey (default F4)
         if waitingForKey then
-            if os.clock() > rebindArmTime then
+            if NowSeconds() > rebindArmTime then
                 for k = 1, 254 do
                     if isKeyJustPressed(k) then
                         hotKeyCode   = k
@@ -1041,7 +1053,7 @@ function main()
         -- its own pcall so that if any function here isn't available
         -- on this build, ONLY this feature silently skips itself -
         -- it can never take down the rest of the script.
-        if os.clock() - reapplyTimer > 2.0 then
+        if NowSeconds() - reapplyTimer > 2.0 then
             -- (reapplyTimer itself gets reset by the grant-reapply
             -- block right below, on this same tick)
 
@@ -1082,8 +1094,8 @@ function main()
         -- what was granted. Blindly resending every 2s on every
         -- granted player caused constant redundant grants and
         -- visible model-rebuild flicker even when nothing changed.
-        if os.clock() - reapplyTimer > 2.0 then
-            reapplyTimer = os.clock()
+        if NowSeconds() - reapplyTimer > 2.0 then
+            reapplyTimer = NowSeconds()
             for playerId, skinId in pairs(grantedSkins) do
                 pcall(function()
                     local res, ped   = sampGetCharHandleBySampPlayerId(playerId)
@@ -1198,7 +1210,7 @@ function imgui.OnDrawFrame()
         imgui.PopItemWidth()
 
         -- Status line
-        if statusText ~= "" and os.clock() < statusExp then
+        if statusText ~= "" and NowSeconds() < statusExp then
             imgui.TextColored(imgui.ImVec4(0.2, 1.0, 0.45, 1.0), statusText)
         end
 
@@ -1298,7 +1310,7 @@ function imgui.OnDrawFrame()
         else
             if imgui.Button("Change Hotkey", imgui.ImVec2(140, 0)) then
                 waitingForKey = true
-                rebindArmTime = os.clock() + 0.3 -- avoid catching this click
+                rebindArmTime = NowSeconds() + 0.3 -- avoid catching this click
                 Say("Press the key you want to use to open this menu...")
             end
         end
