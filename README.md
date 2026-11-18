@@ -8,7 +8,7 @@ This repository is intended as a general technical portfolio. It is not tailored
 
 | Project | Area | Repository status |
 |---|---|---|
-| [3D-Model-Loader](3D-Model-Loader/README.md) | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls | Source published; host-timer elapsed-time handling and Lua 5.4 CI passed; runtime validation pending |
+| [3D-Model-Loader](3D-Model-Loader/README.md) | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls | Source published; custom model-slot validation and host-timer handling pass Lua 5.4 CI; target-host validation pending |
 | [Crash-Lag-Monitor](Crash-Lag-Monitor/README.md) | Crash Guard — performance monitoring and log diagnostics | Source published; protected warning-log I/O is CI-tested; log-rotation cursor checks added for CI; runtime validation pending |
 | [Lua-Code-Checker](Lua-Code-Checker/README.md) | Static checks and conservative automatic fixes for Lua | Source published; Lua 5.4 CI and focused tokenizer/rule/autofix regressions passed; runtime validation pending |
 | [Coordinate-Lookup-Tool](Coordinate-Lookup-Tool/README.md) | Position lookup and handling of protected multi-value returns | Source published; Lua 5.4 CI passed; runtime validation pending |

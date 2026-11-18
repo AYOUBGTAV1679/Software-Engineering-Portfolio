@@ -4,7 +4,7 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest validation run, [GitHub Actions #44334820078](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44334820078), completed successfully on commit `e1fede01b9309eda2381c9f904501fe036bb8ad0`.
+The latest validation run, [GitHub Actions #44342873949](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44342873949), completed successfully on commit `5e3e3819fd62e63e38a3b71c8a5da0943b452726`.
 
 The workflow:
 - Parsed all **31 tracked Lua files** across the seven Lua projects with Lua 5.4.
@@ -26,7 +26,7 @@ The Aegis Windows packaging workflow completed [run #44254113483](https://github
 
 ### 3D Model Loader — Zeno Skin Changer
 
-The source now uses the documented `loadTextureDictionary` and animation request/playback flow rather than the earlier unsupported calls. The walk-style IDs documented by the project are **0–20**. The pending skin-load timeout and periodic UI/reapplication timers now use the host elapsed game timer instead of `os.clock()` process time; host runtime behavior still needs a smoke test. The custom DFF path is now disabled by default because it previously reused model ID `7`, which is already the built-in `MALE01` entry. That would risk replacing a standard model when the external loader is present. The extension exposing `loadModelInfo` and a genuinely unused runtime slot must be identified and tested before this path can be re-enabled.
+The source now uses the documented `loadTextureDictionary` and animation request/playback flow rather than the earlier unsupported calls. The walk-style IDs documented by the project are **0–20**. The pending skin-load timeout and periodic UI/reapplication timers now use the host elapsed game timer instead of `os.clock()` process time; host runtime behavior still needs a smoke test. The custom DFF path is disabled by default because the old runtime slot `7` is already the built-in `MALE01` entry. A defensive validator now rejects negative, fractional, and built-in-catalogue IDs if a slot is configured, but it cannot prove that an unlisted ID is unused by the game or an extension. The extension exposing `loadModelInfo` and a genuinely unused runtime slot must still be identified and tested before this path can be re-enabled.
 
 ### Crash Guard
 
