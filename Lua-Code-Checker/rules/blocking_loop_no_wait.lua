@@ -112,15 +112,30 @@ function M.check(tokens, filename)
 
             local k = doIdx + 1
             local blockDepth = 1
+            local pendingLoopDo = 0
             local hasWait = false
 
             while k <= n and blockDepth > 0 do
                 local t = tokens[k]
-                if t.type == "keyword" and (t.value == "if" or t.value == "for" or t.value == "while" or t.value == "function") then
-                    blockDepth = blockDepth + 1
-                end
-                if t.type == "keyword" and t.value == "end" then
-                    blockDepth = blockDepth - 1
+                if t.type == "keyword" then
+                    if t.value == "for" or t.value == "while" then
+                        -- The following "do" belongs to this loop and is not
+                        -- an additional standalone scope block.
+                        blockDepth = blockDepth + 1
+                        pendingLoopDo = pendingLoopDo + 1
+                    elseif t.value == "if" or t.value == "function" then
+                        blockDepth = blockDepth + 1
+                    elseif t.value == "do" then
+                        if pendingLoopDo > 0 then
+                            pendingLoopDo = pendingLoopDo - 1
+                        else
+                            -- A plain nested "do ... end" must be counted,
+                            -- or its "end" can hide the remainder of the loop.
+                            blockDepth = blockDepth + 1
+                        end
+                    elseif t.value == "end" then
+                        blockDepth = blockDepth - 1
+                    end
                 end
                 if t.type == "identifier" and t.value == "wait" then
                     if k + 1 <= n and tokens[k + 1].value == "(" then

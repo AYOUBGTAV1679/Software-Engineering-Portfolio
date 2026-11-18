@@ -40,7 +40,7 @@ Only a standalone `require("module")` call is currently eligible for automatic w
 
 The tokenizer is implemented in `tokenizer.lua`. Each check is isolated in its own module under `rules/`, while `autofix.lua` contains the supported transformation. The command-line entry point coordinates file loading, analysis, reporting, and optional fixed-copy output.
 
-The blocking-loop rule was refined against a source corpus to reduce false positives from ordinary bounded iteration. Focused regression checks also protect module-root allowlisting and source-line tracking after escaped newlines. The analyzer still cannot reliably reason about every loop whose termination depends on side effects or function calls.
+The blocking-loop rule was refined against a source corpus to reduce false positives from ordinary bounded iteration. Focused regression checks also protect module-root allowlisting, source-line tracking after escaped newlines, `io.popen()` call detection, nested loop-scope scanning, and the narrow autofix boundary. The analyzer still cannot reliably reason about every loop whose termination depends on side effects or function calls.
 
 ## Included fixture
 
@@ -50,7 +50,7 @@ Run the included sample with:
 lua lua_code_checker.lua tests/sample_bad.lua
 ```
 
-The GitHub Actions workflow runs this fixture with Lua 5.4, expects exit code `1` because the findings are intentional, and checks the exact summary: `3 error(s), 3 warning(s), 0 info`. It also runs focused regression checks for nested module allowlisting and source-line tracking after escaped newlines. These checks are not a comprehensive comparison corpus and do not establish overall analyzer accuracy.
+The GitHub Actions workflow runs this fixture with Lua 5.4, expects exit code `1` because the findings are intentional, and checks the exact summary: `3 error(s), 3 warning(s), 0 info`. It also runs focused regression checks for module-root allowlisting, escaped-newline source-line tracking, real `io.popen()` calls versus function references, nested `do` blocks inside loops, and the conservative standalone-`require` autofix. These checks are not a comprehensive comparison corpus and do not establish overall analyzer accuracy.
 
 ## Project layout
 

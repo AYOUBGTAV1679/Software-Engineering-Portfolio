@@ -9,7 +9,7 @@ The latest Lua validation run, [GitHub Actions #44254621952](https://github.com/
 The workflow:
 - Parsed all **27 tracked Lua files** across the seven Lua projects with Lua 5.4.
 - Checked the Lua Code Checker fixture against its expected result: **3 errors, 3 warnings, 0 info**.
-- Ran the Lua Code Checker regression tests for module allowlisting and escaped-newline line tracking.
+- Ran Lua Code Checker regression tests for module allowlisting, escaped-newline line tracking, `io.popen()` call boundaries, nested `do` loop scopes, and conservative autofix behavior.
 - Ran **16 GIF decoder regression cases**, including the malformed-input cases, an independently encoded interlaced multi-pixel fixture that crosses LZW code-width boundaries, and a three-frame transparency/disposal fixture.
 - Ran **7 provider-error classifier cases**, including rate-limit and missing-model responses plus an unrelated invalid-key response.
 - Ran **9 AI asynchronous epoch regression cases**, checking token freshness for interactive responses, prefetch requests, and delayed auto-open tasks.

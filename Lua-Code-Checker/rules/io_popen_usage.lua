@@ -14,10 +14,19 @@ function M.check(tokens, filename)
     local n = #tokens
 
     for i, tok in ipairs(tokens) do
+        local nextCallToken = i + 3
+        while tokens[nextCallToken]
+            and (tokens[nextCallToken].type == "newline"
+                or tokens[nextCallToken].type == "comment") do
+            nextCallToken = nextCallToken + 1
+        end
+
         if (tok.type == "identifier" and tok.value == "io"
                 and i + 2 <= n
                 and tokens[i + 1].value == "."
-                and tokens[i + 2].value == "popen") then
+                and tokens[i + 2].value == "popen"
+                and tokens[nextCallToken]
+                and tokens[nextCallToken].value == "(") then
             findings[#findings + 1] = {
                 file = filename,
                 line = tok.line,
