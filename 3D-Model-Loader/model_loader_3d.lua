@@ -215,12 +215,14 @@ local SKIN_NAMES = {
 local CUSTOM_SKINS = {
 }
 
--- All imported DFF assets currently share this internal runtime slot.
--- The user's configured ID remains the logical ID stored in settings.
-local CUSTOM_SKIN_SLOT = 7
+-- Do not guess a custom runtime model ID. ID 7 is already the built-in
+-- MALE01 model in SKIN_NAMES; reusing it would replace a standard model.
+-- Enable DFF imports only after a host extension and a verified free slot
+-- have both been identified and tested.
+local CUSTOM_SKIN_SLOT = nil
 
 local function GetRuntimeSkinModelId(skinId)
-    if CUSTOM_SKINS[skinId] then
+    if CUSTOM_SKINS[skinId] and type(CUSTOM_SKIN_SLOT) == "number" then
         return CUSTOM_SKIN_SLOT
     end
     return skinId
@@ -590,8 +592,12 @@ local function ApplySkin(entry)
     -- Load custom DFF/TXD if this is a custom skin
     if CUSTOM_SKINS[id] then
         local c    = CUSTOM_SKINS[id]
-        -- The DFF loader is supplied by the target host/extension, if present.
-        -- Fail cleanly when it is unavailable instead of calling a nil global.
+        -- The host API and a safe free model slot are both required. Do not
+        -- reuse a built-in ID; 7 is MALE01 in the built-in catalogue.
+        if c.dff and type(CUSTOM_SKIN_SLOT) ~= "number" then
+            Say("{FF4444}Custom DFF loading is disabled: no verified free runtime model slot is configured.")
+            return
+        end
         if c.dff and type(loadModelInfo) ~= "function" then
             Say("{FF4444}Custom DFF loading is unavailable: loadModelInfo() is not provided by this host.")
             return
@@ -1079,7 +1085,8 @@ function main()
                 pcall(function()
                     local customEntry = CUSTOM_SKINS[mySkin]
                     local customLoaderMissing = customEntry and customEntry.dff
-                        and type(loadModelInfo) ~= "function"
+                        and (type(loadModelInfo) ~= "function"
+                            or type(CUSTOM_SKIN_SLOT) ~= "number")
                     if not customLoaderMissing and doesCharExist(PLAYER_PED)
                         and getCharModel(PLAYER_PED) ~= GetRuntimeSkinModelId(mySkin) then
                         ApplySkin({ id = mySkin, name = SKIN_NAMES[mySkin] or ("ID " .. mySkin) })
