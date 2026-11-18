@@ -4,12 +4,12 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44257398339](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44257398339), completed successfully on commit `8f1a7a5fbcc70ec68e92d36e59d6cab3fab86db9`.
+The latest Lua validation run, [GitHub Actions #44258776281](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44258776281), completed successfully on commit `66a0de5c76d1c1226c82fe58f421e0fbeb55bfba`.
 
 The workflow:
 - Parsed all **31 tracked Lua files** across the seven Lua projects with Lua 5.4.
 - Ran **7 Crash Guard log-writer regression cases** covering open, write, and close failures, including thrown errors and handle cleanup.
-- Added **7 Crash Guard log-cursor regression cases** covering append-only reads, truncation, and replacement with the same or a greater line count; these await the next CI run.
+- Ran **7 Crash Guard log-cursor regression cases** covering append-only reads, truncation, and replacement with the same or a greater line count.
 - Checked the Lua Code Checker fixture against its expected result: **3 errors, 3 warnings, 0 info**.
 - Ran **8 Lua Code Checker regression cases** for module allowlisting, escaped-newline line tracking, `io.popen()` call boundaries, nested `do` loop scopes, and conservative autofix behavior.
 - Ran **17 GIF decoder regression cases**, including the malformed-input cases, an independently encoded interlaced multi-pixel fixture that crosses LZW code-width boundaries, and a three-frame transparency/disposal fixture.
@@ -29,7 +29,7 @@ The source now uses the documented `loadTextureDictionary` and animation request
 
 ### Crash Guard
 
-The script uses the host game timer for elapsed-time measurements and scans vehicles around the local character through `findAllRandomVehiclesInSphere`. Warning-log appends now use a small helper that protects open, write, and close separately; even when a write throws or returns an I/O error, the file handle is still closed and the failure does not escape into monitoring. The watchdog cursor now compares the previous checkpoint line as well as the line count, so a truncated or replaced `moonloader.log` is re-read from the beginning instead of being silently skipped. The seven new cursor cases await CI verification. The documented scan radius is **250 units**, with duplicate handling and a per-scan ceiling. The scan is not a count of every vehicle in the full game world. Iterator behavior and returned handles still require a MoonLoader runtime test.
+The script uses the host game timer for elapsed-time measurements and scans vehicles around the local character through `findAllRandomVehiclesInSphere`. Warning-log appends now use a small helper that protects open, write, and close separately; even when a write throws or returns an I/O error, the file handle is still closed and the failure does not escape into monitoring. The watchdog cursor now compares the previous checkpoint line as well as the line count, so a truncated or replaced `moonloader.log` is re-read from the beginning instead of being silently skipped. The seven cursor regression cases passed in Lua 5.4 CI. The documented scan radius is **250 units**, with duplicate handling and a per-scan ceiling. The scan is not a count of every vehicle in the full game world. Iterator behavior and returned handles still require a MoonLoader runtime test.
 
 ### Lua Code Checker
 
