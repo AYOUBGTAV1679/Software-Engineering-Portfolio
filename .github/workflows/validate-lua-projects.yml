@@ -36,7 +36,13 @@ jobs:
       - name: Install Lua 5.4
         run: |
           sudo apt-get update
-          sudo apt-get install --yes lua5.4
+          sudo apt-get install --yes lua5.4 libavformat-dev libavcodec-dev libavutil-dev libswscale-dev pkg-config
+
+      - name: Syntax-check experimental FFmpeg bridge
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -fsyntax-only \
+            Scoreboard-GIF-Decoder/video_bridge.c \
+            $(pkg-config --cflags libavformat libavcodec libswscale)
 
       - name: Parse all Lua project files
         shell: bash

@@ -43,14 +43,14 @@ The test suite exercises both accepted GIF signatures and the malformed-input bo
 
 ## Video bridge status
 
-`video_bridge.c` contains a proposed FFmpeg-based native bridge for frame decoding. It is explicitly marked in the source as not compiled or tested. The Lua integration also calls `imgui.CreateTextureFromRawBytes`, which is marked as a placeholder that must be matched to the actual ImGui binding. Consequently, MP4/video playback is experimental and should not be presented as a working feature. The Lua wrapper validates initial and reopened handles, checks frame dimensions against the 4,000,000-pixel limit, avoids retrying a failed decode on every render frame, and uses presentation-timestamp differences for pacing when they are usable (with a 30fps fallback). The timestamp calculation is covered by a small pure-Lua helper test, not by native playback tests. The current dependable media path documented here is GIF decoding and playback.
+`video_bridge.c` contains an optional FFmpeg-based native bridge for frame decoding. The source checks dimensions before allocating its RGBA buffer, validates allocation and image-layout operations, refreshes the scaler for the decoded pixel format, drains delayed decoder frames, and flushes the decoder at end-of-stream. GitHub Actions now performs a C syntax-only check against Ubuntu FFmpeg development headers; this is not a Windows DLL build or a playback test. The Lua integration also calls `imgui.CreateTextureFromRawBytes`, which is marked as a placeholder that must be matched to the actual ImGui binding. Consequently, MP4/video playback is experimental and should not be presented as a working feature. The Lua wrapper validates initial and reopened handles, checks frame dimensions against the 4,000,000-pixel limit, avoids retrying a failed decode on every render frame, and uses presentation-timestamp differences for pacing when they are usable (with a 30fps fallback). The timestamp calculation is covered by a small pure-Lua helper test, not by native playback tests. The current dependable media path documented here is GIF decoding and playback.
 
 ## Tech Stack
 
 - Lua for the MoonLoader script and standalone GIF decoder core
 - LuaJIT FFI for the optional, experimental native-video integration
 - ImGui for the scoreboard and texture display
-- C and FFmpeg for the proposed native bridge; the bridge is not compiled or runtime-verified
+- C and FFmpeg for the optional native bridge; CI checks C syntax against Linux FFmpeg headers, but a Windows DLL build and runtime verification remain outstanding
 - Lua 5.4 for the standalone decoder and timing regression suites
 
 ## How to Use / Installation
