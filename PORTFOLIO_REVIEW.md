@@ -4,11 +4,11 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44256629759](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44256629759), completed successfully on commit `c0e1d74d7adf5e43603668edf37b487a1f28ef92`.
+The latest Lua validation run, [GitHub Actions #44257398339](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44257398339), completed successfully on commit `8f1a7a5fbcc70ec68e92d36e59d6cab3fab86db9`.
 
 The workflow:
 - Parsed all **29 tracked Lua files** across the seven Lua projects with Lua 5.4.
-- Ran **8 Crash Guard log-writer regression cases** covering open, write, and close failures, including thrown errors and handle cleanup.
+- Ran **7 Crash Guard log-writer regression cases** covering open, write, and close failures, including thrown errors and handle cleanup.
 - Checked the Lua Code Checker fixture against its expected result: **3 errors, 3 warnings, 0 info**.
 - Ran **8 Lua Code Checker regression cases** for module allowlisting, escaped-newline line tracking, `io.popen()` call boundaries, nested `do` loop scopes, and conservative autofix behavior.
 - Ran **17 GIF decoder regression cases**, including the malformed-input cases, an independently encoded interlaced multi-pixel fixture that crosses LZW code-width boundaries, and a three-frame transparency/disposal fixture.
