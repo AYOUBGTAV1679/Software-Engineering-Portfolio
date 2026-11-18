@@ -4,7 +4,7 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44255672661](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44255672661), completed successfully on commit `4ffaf0f2f84e7994569c05df3bb8f4dc18807066`.
+The latest Lua validation run, [GitHub Actions #44256016878](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44256016878), completed successfully on commit `aee8bfafc2fb0c437e77286b22bacd1a1950b16c`.
 
 The workflow:
 - Parsed all **27 tracked Lua files** across the seven Lua projects with Lua 5.4.
@@ -47,7 +47,7 @@ The GIF parsing and LZW logic has been separated into the pure-Lua `gif_decoder_
 
 The suite is now broader than the original generated-only tests, but it is still a focused regression set, not a complete third-party GIF conformance corpus. Texture loading and playback still need testing in the target MoonLoader/ImGui environment. The optional `video_bridge.c` remains uncompiled and untested, and the Lua texture upload call is explicitly a placeholder; MP4 playback must remain labelled experimental. The Lua wrapper now validates the loop-reopen handle and avoids tight retry loops after native decode errors.
 
-Installation note: the scoreboard script requires `gif_decoder_core.lua` in the host's `moonloader/lib` directory.
+Installation note: the scoreboard script requires `gif_decoder_core.lua` and `video_timing.lua` in the host's `moonloader/lib` directory.
 
 ### Threaded AI Chat API
 
