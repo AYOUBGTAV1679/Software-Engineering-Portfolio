@@ -99,13 +99,13 @@ The worker model prevents a normal request wait from blocking the main script lo
 
 ## Prefetch concurrency regression tests
 
-Both interactive responses and prefetch results use separate generation tokens. Resetting the current chat context invalidates stale callbacks and releases the loading state so a new message can be requested. Switching providers, or rotating the model after a recognized availability error, also invalidates old prefetch work; this prevents a result produced for the previous provider/model from being displayed or cached under the new selection. The epoch helper is tested without a live provider request:
+Interactive responses, prefetch results, and the 300 ms auto-open delay use generation tokens for separate freshness checks. Resetting the current chat context invalidates stale callbacks, releases the loading state, and cancels any delayed auto-open task for the previous text. Changing the auto-open switch also invalidates a pending timer, and the timer rechecks both its token and the current setting before opening the UI. Switching providers, or rotating the model after a recognized availability error, also invalidates old prefetch work; this prevents a result produced for the previous provider/model from being displayed or cached under the new selection. The epoch helper is tested without a live provider request:
 
 ```sh
 lua5.4 tests/test_prefetch_epoch.lua
 ```
 
-The helper suite checks callback freshness bookkeeping, including independent tokens for interactive responses and prefetch work. It does not simulate the MoonLoader event loop or prove live HTTP timing behavior.
+The nine-case helper suite checks callback freshness bookkeeping, including independent tokens for interactive responses and prefetch work plus delayed auto-open cancellation. It does not simulate the MoonLoader event loop or prove live HTTP timing behavior.
 
 ## License
 

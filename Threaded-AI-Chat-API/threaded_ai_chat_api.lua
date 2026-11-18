@@ -106,6 +106,7 @@ local prefetch_key    = ""
 local prefetch_busy   = false
 local prefetch_epoch  = PrefetchEpoch.new()
 local response_epoch  = PrefetchEpoch.new()
+local auto_trigger_epoch = PrefetchEpoch.new()
 local prefetch_done   = false
 local prefetch_result = nil
 
@@ -920,6 +921,8 @@ local function IsMe(name)
 end
 
 local function ResetPF()
+    -- Context changes also cancel any auto-open timer scheduled for old text.
+    auto_trigger_epoch:invalidate()
     -- A context/provider change makes every outstanding interactive response
     -- stale too. Clear the flag so the new context can start its own request.
     response_epoch:invalidate()
@@ -928,10 +931,16 @@ local function ResetPF()
 end
 
 local function TriggerAuto()
-    if not w_auto.v or w_main.v then return end
+    if not w_auto.v or w_main.v then
+        auto_trigger_epoch:invalidate()
+        return
+    end
+    local triggerEpoch = auto_trigger_epoch:begin()
     lua_thread.create(function()
         wait(300)
-        if w_main.v then return end
+        -- A newer chat context or an auto-open toggle makes this timer stale.
+        if not auto_trigger_epoch:is_current(triggerEpoch) then return end
+        if not w_auto.v or w_main.v then return end
         w_main.v = true; generated = {}; status_msg = ""; SyncUI()
         if prefetch_done and prefetch_result then
             local cmd = GetCmd(last_type, true)
@@ -1697,7 +1706,11 @@ function imgui.OnDrawFrame()
     imgui.PopStyleColor(3)
 
     imgui.Spacing()
+    local autoWasEnabled = w_auto.v
     imgui.Checkbox("Auto-open on /me or /do", w_auto)
+    if autoWasEnabled ~= w_auto.v then
+        auto_trigger_epoch:invalidate()
+    end
     if w_auto.v then imgui.SameLine(); imgui.TextColored(imgui.ImVec4(.4,1,.4,1), "  ON") end
     imgui.SameLine(imgui.GetWindowWidth()-80)
     imgui.PushStyleColor(imgui.Col.Button,        imgui.ImVec4(.25,.25,.10,1))
@@ -1844,6 +1857,7 @@ function main()
 
     sampRegisterChatCommand("jrpauto", function()
         w_auto.v = not w_auto.v
+        auto_trigger_epoch:invalidate()
         Say(w_auto.v and "Auto-open ON" or "Auto-open OFF")
     end)
 
