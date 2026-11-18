@@ -38,7 +38,7 @@ Input for the resource threshold is converted to an integer before it is validat
 - MoonLoader game-timer, character-coordinate, and vehicle-enumeration functions
 - ImGui for the monitoring and settings interface
 - Standard Lua file I/O for warning history and log inspection
-- A small protected file-writer helper for warning-log appends
+- A protected file-writer helper and a log-cursor helper for warning-log appends and host-log rotation detection
 
 ## How to Use / Installation
 
@@ -46,7 +46,7 @@ Input for the resource threshold is converted to an integer before it is validat
 - The host's ImGui integration (`imgui`)
 - MoonLoader's vehicle-in-sphere search and game-timer functions
 
-Copy `crash_lag_monitor.lua` into the host's MoonLoader scripts directory, and copy `crash_guard_log_writer.lua` into `moonloader/lib`. The script creates or appends its warning log under the MoonLoader directory. File open, write, and close failures are handled without raising through the monitoring path; the pure-Lua regression suite uses controlled fake file handles, not an actual disk-full device test.
+Copy `crash_lag_monitor.lua` into the host's MoonLoader scripts directory, and copy `crash_guard_log_writer.lua` and `crash_guard_log_cursor.lua` into `moonloader/lib`. The script creates or appends its warning log under the MoonLoader directory. File open, write, and close failures are handled without raising through the monitoring path; the log cursor detects replacement/truncation by checking its previous checkpoint line. The two pure-Lua regression suites use controlled fake handles and data, not actual disk-full or live host-log rotation tests.
 
 The accompanying `.ini` file is a separate host-configuration artifact, not part of the Lua monitor. Review it against the local installation before using it; do not overwrite an existing configuration blindly.
 

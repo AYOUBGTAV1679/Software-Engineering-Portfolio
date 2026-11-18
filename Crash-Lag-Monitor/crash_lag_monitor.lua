@@ -54,6 +54,7 @@ script_version("2.0")
 
 local imgui = require("imgui")
 local SafeLogWriter = require("crash_guard_log_writer")
+local LogCursor = require("crash_guard_log_cursor")
 
 local WARN_THRESHOLD   = 5      -- same-model vehicle count that triggers a warning
 local CHECK_INTERVAL    = 5000   -- ms between vehicle-count checks
@@ -230,6 +231,7 @@ local ML_LOG_CANDIDATES = {
 
 local mlLogPath = nil
 local mlLogLastLineCount = 0
+local mlLogLastLine = nil
 local recentScriptDeaths = {} -- most recent first, for the UI list
 local watchdogOn = imgui.ImBool(true)
 
@@ -242,10 +244,9 @@ local function FindMoonloaderLog()
     return nil
 end
 
--- Reads moonloader.log, returns only the lines added since the last
--- call (by comparing total line counts - simple and safe, no seek/
--- partial-read complexity, acceptable since this file is read
--- periodically, not on every tick).
+-- Read moonloader.log and return newly appended lines. A checkpoint-line
+-- comparison also detects truncation/replacement when the new file has the
+-- same or a greater line count than the previous version.
 local function ReadNewLogLines()
     if not mlLogPath then
         mlLogPath = FindMoonloaderLog()
@@ -261,13 +262,10 @@ local function ReadNewLogLines()
     end
     f:close()
 
-    local newLines = {}
-    if #all > mlLogLastLineCount then
-        for i = mlLogLastLineCount + 1, #all do
-            table.insert(newLines, all[i])
-        end
-    end
-    mlLogLastLineCount = #all
+    local newLines, nextCount, nextLastLine =
+        LogCursor.collectNewLines(all, mlLogLastLineCount, mlLogLastLine)
+    mlLogLastLineCount = nextCount
+    mlLogLastLine = nextLastLine
     return newLines
 end
 

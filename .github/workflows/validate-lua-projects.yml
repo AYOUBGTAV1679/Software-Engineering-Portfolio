@@ -54,8 +54,8 @@ jobs:
               -type f -name '*.lua' -print0 | sort -z
           )
 
-          if [ "${#lua_files[@]}" -ne 29 ]; then
-            printf 'Expected 29 Lua files, found %s\n' "${#lua_files[@]}"
+          if [ "${#lua_files[@]}" -ne 31 ]; then
+            printf 'Expected 31 Lua files, found %s\n' "${#lua_files[@]}"
             exit 1
           fi
 
@@ -66,6 +66,9 @@ jobs:
 
       - name: Run Crash Guard log-writer regression tests
         run: cd Crash-Lag-Monitor && lua5.4 tests/test_crash_guard_log_writer.lua
+
+      - name: Run Crash Guard log-cursor regression tests
+        run: cd Crash-Lag-Monitor && lua5.4 tests/test_crash_guard_log_cursor.lua
 
       - name: Check Lua Code Checker fixture output
         shell: bash
