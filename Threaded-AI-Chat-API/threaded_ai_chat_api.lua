@@ -105,6 +105,7 @@ local CACHE_MAX = 30
 local prefetch_key    = ""
 local prefetch_busy   = false
 local prefetch_epoch  = PrefetchEpoch.new()
+local response_epoch  = PrefetchEpoch.new()
 local prefetch_done   = false
 local prefetch_result = nil
 
@@ -117,6 +118,15 @@ local font_loaded = false
 -- HTTP result queue: lanes thread puts result here, main thread reads it
 local http_queue = {}
 local http_lanes = {} -- active worker handles, keyed by request ID
+
+-- Prefetch and interactive responses have separate freshness domains.
+local function InvalidatePrefetch()
+    prefetch_epoch:invalidate()
+    prefetch_key = ""
+    prefetch_busy = false
+    prefetch_done = false
+    prefetch_result = nil
+end
 
 --------------------------------------------------------------------------------
 -- WINDOWS
@@ -713,8 +723,10 @@ local function SendToServer(multi, cb)
     is_loading = true
     status_msg = "Thinking..."
     generated  = {}
+    local requestEpoch = response_epoch:begin()
     SendRequest(cmd, last_type, last_text,
         function(result)
+            if not response_epoch:is_current(requestEpoch) then return end
             is_loading = false
             CSe(ck, result)
             generated  = ParseResp(result)
@@ -724,6 +736,7 @@ local function SendToServer(multi, cb)
             if cb then cb() end
         end,
         function(err, request_info)
+            if not response_epoch:is_current(requestEpoch) then return end
             is_loading = false
             local err_str = tostring(err)
             -- Rotate only if this failed request still belongs to the active
@@ -746,6 +759,9 @@ local function SendToServer(multi, cb)
                 model_idx = model_idx + 1
                 if model_idx > #active_models then model_idx = 1 end
                 MODEL = active_models[model_idx]
+                -- Any prefetch started for the previous model must not become
+                -- the visible suggestion for this newly selected model.
+                InvalidatePrefetch()
                 status_msg = "Rate limit - switching to: " .. MODEL
                 Say("Rate limit - trying: " .. MODEL)
             elseif isModelAvailabilityError then
@@ -764,9 +780,8 @@ local function TryPrefetch(mode, text)
     if cached then
         -- A cached result for the current key supersedes any older in-flight
         -- prefetch. Its callback must not overwrite this ready result later.
-        prefetch_epoch:invalidate()
+        InvalidatePrefetch()
         prefetch_key    = ck
-        prefetch_busy   = false
         prefetch_done   = true
         prefetch_result = cached
         return
@@ -814,8 +829,10 @@ local function SendAutoSmart()
     end
     is_loading = true
     status_msg = "Thinking (Auto)..."
+    local requestEpoch = response_epoch:begin()
     SendRequest(cmd, last_type, last_text,
         function(r)
+            if not response_epoch:is_current(requestEpoch) then return end
             is_loading = false
             CSe(ck, r)
             local e = ParseResp(r)
@@ -830,6 +847,7 @@ local function SendAutoSmart()
             end
         end,
         function(err)
+            if not response_epoch:is_current(requestEpoch) then return end
             is_loading = false
             status_msg = "Error: " .. tostring(err)
         end
@@ -902,11 +920,11 @@ local function IsMe(name)
 end
 
 local function ResetPF()
-    prefetch_epoch:invalidate()
-    prefetch_key = ""
-    prefetch_busy = false
-    prefetch_done = false
-    prefetch_result = nil
+    -- A context/provider change makes every outstanding interactive response
+    -- stale too. Clear the flag so the new context can start its own request.
+    response_epoch:invalidate()
+    is_loading = false
+    InvalidatePrefetch()
 end
 
 local function TriggerAuto()
@@ -1848,11 +1866,13 @@ function main()
             USE_OR = true
             model_idx = 1
             MODEL = MODELS_OR[1]
+            ResetPF()
             Say("Switched to OpenRouter: " .. MODEL)
         else
             USE_OR = false
             model_idx = 1
             MODEL = MODELS[1]
+            ResetPF()
             Say("Switched to Groq: " .. MODEL)
         end
     end)

@@ -88,10 +88,10 @@ The worker model prevents a normal request wait from blocking the main script lo
 
 ## Prefetch concurrency regression tests
 
-The prefetch result path uses a monotonically increasing request epoch. Resetting the current chat context or accepting a cache hit invalidates older callbacks, preventing a delayed result for a previous message from replacing the active message's suggestion state. The epoch helper is tested without a live provider request:
+Both interactive responses and prefetch results use separate generation tokens. Resetting the current chat context invalidates stale callbacks and releases the loading state so a new message can be requested. Switching providers, or rotating the model after a recognized availability error, also invalidates old prefetch work; this prevents a result produced for the previous provider/model from being displayed or cached under the new selection. The epoch helper is tested without a live provider request:
 
 ```sh
 lua5.4 tests/test_prefetch_epoch.lua
 ```
 
-This checks callback freshness bookkeeping only; it does not simulate the MoonLoader event loop or prove live HTTP timing behavior.
+The helper suite checks callback freshness bookkeeping, including independent tokens for interactive responses and prefetch work. It does not simulate the MoonLoader event loop or prove live HTTP timing behavior.

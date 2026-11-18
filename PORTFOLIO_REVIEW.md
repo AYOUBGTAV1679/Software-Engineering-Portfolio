@@ -12,7 +12,7 @@ The workflow:
 - Ran the Lua Code Checker regression tests for module allowlisting and escaped-newline line tracking.
 - Ran **16 GIF decoder regression cases**, including the malformed-input cases, an independently encoded interlaced multi-pixel fixture that crosses LZW code-width boundaries, and a three-frame transparency/disposal fixture.
 - Ran **7 provider-error classifier cases**, including rate-limit and missing-model responses plus an unrelated invalid-key response.
-- Ran **5 AI prefetch epoch regression cases**, checking that reset or newer-request tokens invalidate older callbacks.
+- Ran **7 AI asynchronous epoch regression cases**, checking that reset or newer-request tokens invalidate older interactive and prefetch callbacks independently.
 - Ran **6 video timestamp helper cases**, covering valid variable frame intervals and fallback behavior for repeated, backward, missing, non-finite, and excessive timestamp gaps.
 - Ran **9 Network Session Recorder file-I/O regression cases**, including reported/thrown write failures and cleanup after flush/close errors.
 
@@ -52,7 +52,7 @@ Installation note: the scoreboard script requires `gif_decoder_core.lua` in the 
 
 HTTP requests run in Lua Lanes workers, and the main coroutine polls for a result. The request captures its provider, model, endpoint, and API key at creation so a provider switch during an in-flight request does not redirect it. Delayed model errors only rotate the active model when the failed request still matches the current provider/model selection.
 
-Provider error classification is isolated in `provider_error_classifier.lua` and covered by seven pure-Lua regression cases. Recognized rate-limit and unavailable-model payloads are normalized before reaching model rotation. Prefetch callbacks now carry generation tokens: resetting the current context or accepting a cache hit invalidates previous tokens, and the five-case helper suite checks that stale callbacks are rejected. This isolates the freshness guard but does not simulate the full MoonLoader event loop. The script deliberately requests lane cancellation on timeout without force-killing a worker; cancellation may not interrupt a worker blocked in a native or network call.
+Provider error classification is isolated in `provider_error_classifier.lua` and covered by seven pure-Lua regression cases. Recognized rate-limit and unavailable-model payloads are normalized before reaching model rotation. Interactive response callbacks and prefetch callbacks now use separate generation tokens. Context changes invalidate both kinds of pending work and release the loading state; provider switches and model rotation also invalidate stale prefetch results so they cannot be associated with the new selection. The seven-case helper suite checks token freshness and separation, but it does not simulate the full MoonLoader event loop. The script deliberately requests lane cancellation on timeout without force-killing a worker; cancellation may not interrupt a worker blocked in a native or network call.
 
 No live Groq or OpenRouter request has been verified. The exact Lua Lanes and HTTP module versions in the target host also need compatibility testing. Installation note: copy `provider_error_classifier.lua` and `prefetch_epoch.lua` into `moonloader/lib` alongside the other documented dependencies. Do not commit real API keys.
 
