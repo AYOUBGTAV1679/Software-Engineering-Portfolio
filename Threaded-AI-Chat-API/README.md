@@ -1,5 +1,7 @@
 # RP Respond AI — Threaded Chat API Integration
 
+## Overview
+
 RP Respond AI connects a Lua client script to a remote language-model API and presents generated responses through a chat-oriented interface. Its central engineering constraint is that the host script loop is cooperative: waiting for a network response in that loop would delay UI and runtime updates.
 
 The script moves HTTP work into a worker created through the `lanes` threading library. Results are returned through a thread-safe Linda channel and polled by the main script, which handles the UI update after the response is ready.
@@ -54,13 +56,22 @@ The script requires a valid key for the selected provider, the selected model to
 | `/jrphelp` | Show help |
 | `/jrpor groq` or `/jrpor or` | Select the provider |
 
-## JSON parsing edge case
+## Bugs Fixed & Engineering Challenges
 
 The response extractor handles escaped quotes, newline escapes, and backslash sequences while scanning the response content. A past defect involved a response ending with a literal backslash: a redundant look-behind check could treat the actual closing quote as escaped and continue reading into the next JSON field. The current source removes that redundant check and consumes escape pairs in one pass.
 
 The extractor is intentionally narrow and is not a general-purpose JSON parser. Provider error payloads are classified separately before the script reports a parse failure, so recognized rate-limit and unavailable-model responses can trigger model rotation. Provider response changes or unexpected JSON layouts may still require an update.
 
-## Requirements and setup
+## Tech Stack
+
+- Lua in a MoonLoader-based scripting host
+- Lua Lanes for background HTTP workers
+- The `requests` HTTP module for provider requests
+- ImGui for chat, settings, and history interfaces
+- Groq or OpenRouter-compatible chat-completion APIs
+- Pure-Lua helpers for error classification and asynchronous callback epochs
+
+## How to Use / Installation
 
 - A compatible MoonLoader scripting host and its ImGui integration
 - SAMPFUNCS and the event hooks used by the script
@@ -95,3 +106,7 @@ lua5.4 tests/test_prefetch_epoch.lua
 ```
 
 The helper suite checks callback freshness bookkeeping, including independent tokens for interactive responses and prefetch work. It does not simulate the MoonLoader event loop or prove live HTTP timing behavior.
+
+## License
+
+No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.

@@ -1,5 +1,7 @@
 # Scoreboard with a Custom GIF Decoder
 
+## Overview
+
 This project combines a configurable scoreboard and session-statistics interface with a GIF89a decoder implemented in Lua. The decoder is the main technical component: it parses the image structure, decompresses LZW data, composites frames, and stores decoded frame assets for reuse.
 
 ## Scoreboard interface
@@ -23,7 +25,7 @@ The Lua decoder handles:
 
 This pipeline performs the parsing and decompression itself instead of delegating GIF decoding to a system image library.
 
-## Decoder correctness work
+## Bugs Fixed & Engineering Challenges
 
 The development notes identify a boundary condition in LZW code-width growth as an important defect. The code's width transition must account for the decoder learning dictionary entries one step after the encoder creates them; an off-by-one change can desynchronize the remaining bitstream even when the first few pixels look correct.
 
@@ -43,7 +45,15 @@ The test suite exercises both accepted GIF signatures and the malformed-input bo
 
 `video_bridge.c` contains a proposed FFmpeg-based native bridge for frame decoding. It is explicitly marked in the source as not compiled or tested. The Lua integration also calls `imgui.CreateTextureFromRawBytes`, which is marked as a placeholder that must be matched to the actual ImGui binding. Consequently, MP4/video playback is experimental and should not be presented as a working feature. The Lua wrapper validates initial and reopened handles, checks frame dimensions against the 4,000,000-pixel limit, avoids retrying a failed decode on every render frame, and uses presentation-timestamp differences for pacing when they are usable (with a 30fps fallback). The timestamp calculation is covered by a small pure-Lua helper test, not by native playback tests. The current dependable media path documented here is GIF decoding and playback.
 
-## Setup and requirements
+## Tech Stack
+
+- Lua for the MoonLoader script and standalone GIF decoder core
+- LuaJIT FFI for the optional, experimental native-video integration
+- ImGui for the scoreboard and texture display
+- C and FFmpeg for the proposed native bridge; the bridge is not compiled or runtime-verified
+- Lua 5.4 for the standalone decoder and timing regression suites
+
+## How to Use / Installation
 
 - A compatible MoonLoader scripting host
 - SAMPFUNCS and the ImGui integration used by the host
@@ -62,3 +72,7 @@ The checked-in fixtures live in `tests/fixtures/`. The 32×32 interlaced LZW sam
 
 
 The LZW fixture is a 32×32 interlaced GIF encoded by an independent Python encoder and verified with Pillow. It exercises variable-width LZW decoding through 9-bit codes; the current regression does not claim coverage of the 9-to-10-bit or 10-to-11-bit transitions.
+
+## License
+
+No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.

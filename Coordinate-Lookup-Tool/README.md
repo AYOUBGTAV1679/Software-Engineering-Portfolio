@@ -1,5 +1,7 @@
 # Coordinate Lookup Tool
 
+## Overview
+
 Coordinate Lookup Tool is a compact Lua utility that resolves a participant's current position and moves the local character to that position. It also keeps an in-memory cache of positions observed while participants are available, which can be used by the host's replay workflow when a live session is no longer active.
 
 ## Behavior
@@ -21,7 +23,7 @@ The cache is session memory. It is not a persistent coordinate database, and the
 
 The command accepts an integer player ID from 0 through 999 and rejects fractional or out-of-range values before calling host APIs. It reports when the target is unavailable or its position cannot be resolved.
 
-## Correctness detail: protected multi-value returns
+## Bugs Fixed & Engineering Challenges
 
 The host position function returns a status value followed by three coordinate components. Wrapping it in Lua's `pcall` adds a second status value. The caller must therefore capture both flags and all three coordinates:
 
@@ -33,7 +35,14 @@ Capturing too few values shifts the coordinates into the wrong variables and dro
 
 The script also updates `lastId` only after a successful move, so a failed replay lookup does not replace the previous successful target.
 
-## Requirements and setup
+## Tech Stack
+
+- Lua for MoonLoader
+- SAMPFUNCS participant and position functions
+- Host coordinate and character-movement APIs
+- In-memory Lua tables for session cache state
+
+## How to Use / Installation
 
 - A compatible MoonLoader scripting host
 - SAMPFUNCS and the host position/participant functions used by the script
@@ -43,3 +52,7 @@ Copy `coordinate_lookup_tool.lua` into the host's MoonLoader scripts directory a
 ## Limitations
 
 This is an environment-specific navigation utility, not a general GPS or mapping library. The cache is keyed by player ID; when an active slot is observed with a different nickname, its previous cached entry is discarded to avoid carrying coordinates across a visible slot reassignment. Cached positions may still become stale, disappear when the script session ends, or be unavailable for participants that were never observed. A successful coordinate lookup also does not guarantee that moving to the coordinate is safe or valid in every host state.
+
+## License
+
+No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.

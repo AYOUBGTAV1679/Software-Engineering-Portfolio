@@ -1,5 +1,7 @@
 # Network Session Recorder
 
+## Overview
+
 Network Session Recorder captures selected client-observed RPC and packet data into local recording files and provides playback controls for reviewing those recordings. It is a client-side capture tool: it records the events exposed to its hooks, not an authoritative server-side packet trace.
 
 ## Recording workflow
@@ -32,7 +34,7 @@ Playback can only reproduce information that was captured, serialized, and suppo
 | `/rewind HH:MM:SS` | Seek during playback |
 | `/rmpossess <id>` | Switch to a participant viewpoint; omit the ID to leave that mode |
 
-## Engineering work
+## Bugs Fixed & Engineering Challenges
 
 - Delayed connection-handshake callbacks are generation-checked. A new INITGAME clears stale player-ID/nickname values, and each Start operation freezes a preamble snapshot so a callback finishing later cannot cause an old INITGAME to be duplicated in the new recording.
 - Recording writes, periodic flushes, and finalization now check file-operation results. A write/flush failure exits the worker through a protected path, and close is still attempted when the final flush fails.
@@ -42,7 +44,14 @@ Playback can only reproduce information that was captured, serialized, and suppo
 - Recording output is flushed on a periodic schedule, reducing the amount of buffered data exposed to an unexpected exit.
 - The last quiet interval before Stop is stored as a trailing wait record, rather than being discarded when no later packet arrives.
 
-## Requirements and setup
+## Tech Stack
+
+- Lua in a MoonLoader-based client runtime
+- SAMPFUNCS RPC and packet hooks with RakNet bitstream serialization
+- ImGui controls for recording and playback
+- Local file I/O and pure-Lua helpers for checked writes and callback freshness
+
+## How to Use / Installation
 
 - A compatible MoonLoader scripting host
 - SAMPFUNCS and the packet/RPC hook functions used by the script
@@ -70,3 +79,7 @@ lua5.4 tests/test_recorder_epoch.lua
 ```
 
 The epoch tests cover connection replacement while a delayed callback is pending; they do not simulate MoonLoader networking or replace a sustained-recording test in the target host.
+
+## License
+
+No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.

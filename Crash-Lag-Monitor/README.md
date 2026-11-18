@@ -1,5 +1,7 @@
 # Crash Guard — Runtime Diagnostics Monitor
 
+## Overview
+
 Crash Guard is a Lua diagnostics script that combines performance sampling, resource-count monitoring, warning history, and log inspection. Its purpose is to provide useful signals for investigation; it does not claim to prevent every crash or raise the host application's engine-level resource limits.
 
 ## What it monitors
@@ -22,7 +24,7 @@ Crash Guard is a Lua diagnostics script that combines performance sampling, reso
 | `/cgwatchdog` | Toggle log-based monitoring of other scripts |
 | `/cglog` | Show recent warnings from the persistent log |
 
-## Design decisions
+## Bugs Fixed & Engineering Challenges
 
 A single global FPS threshold is not a useful signal across machines with very different normal performance. Crash Guard therefore compares the recent frame-rate window with a slowly updated session baseline using the host game timer, and only treats a drop as an additional signal when nearby resource counts are already elevated. The vehicle scan is bounded to a 250-unit sphere around the local character rather than claiming to count every vehicle loaded anywhere in the world.
 
@@ -30,7 +32,14 @@ The user interface reads a cached monitoring snapshot rather than repeating full
 
 Input for the resource threshold is converted to an integer before it is validated, preventing a positive fractional value from being accepted and then rounded down to zero.
 
-## Requirements and setup
+## Tech Stack
+
+- Lua in a MoonLoader-based client runtime
+- MoonLoader game-timer, character-coordinate, and vehicle-enumeration functions
+- ImGui for the monitoring and settings interface
+- Standard Lua file I/O for warning history and log inspection
+
+## How to Use / Installation
 
 - A compatible MoonLoader scripting host
 - The host's ImGui integration (`imgui`)
@@ -43,3 +52,7 @@ The accompanying `.ini` file is a separate host-configuration artifact, not part
 ## Scope and limitations
 
 Crash Guard reports selected runtime signals. It cannot guarantee that an application will remain stable, detect every failure mode, diagnose every root cause, or change engine-level resource limits. Log matching is only as complete as the patterns recognized by the script and the data written by the host.
+
+## License
+
+No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.

@@ -1,5 +1,7 @@
 # Zeno Skin Changer
 
+## Overview
+
 Zeno Skin Changer is a Lua utility for a supported MoonLoader-based client. It combines a searchable model catalogue, local asset discovery, per-player visual assignments, personal settings, and a small walk-style manager in one interface.
 
 The implementation is useful as a study in keeping several kinds of state separate: the current UI selection, the user's saved choice, imported asset metadata, temporary name-based assignments, and runtime reapplication state.
@@ -49,13 +51,20 @@ The configured walk styles use the host's built-in `ped` animation block. No ext
 | `/swalkp <playerID> <styleID>` | Apply a walk style to a selected participant |
 | `/swalk0` | Reset the local walk style |
 
-## Engineering notes
+## Bugs Fixed & Engineering Challenges
 
 The implementation separates the logical model ID shown and saved in settings from the internal runtime slot used for a custom DFF. Reapplication compares the character's actual runtime model ID with that slot, avoiding repeated reload attempts caused by comparing two different identifiers. Loading is processed through a pending-state path with a timeout rather than relying on an unbounded blocking wait. Timeout, UI status, hotkey, and reapplication intervals use the host elapsed game timer, with a seconds-resolution wall-clock fallback, rather than Lua process-CPU time. Binary model and texture files are opened in binary mode before their sizes are checked.
 
 Personal settings and temporary assignments have different lifetimes: personal choices and the hotkey are stored locally, while nickname-based assignments remain in memory for the current session. These overrides are local presentation behavior; they do not modify server-side records or another user's files.
 
-## Requirements and setup
+## Tech Stack
+
+- Lua for the MoonLoader scripting runtime
+- MoonLoader and SAMPFUNCS host functions for model, texture, animation, and participant operations
+- MoonLoader ImGui for the configuration interface
+- Local INI, DFF, and TXD files for custom asset configuration
+
+## How to Use / Installation
 
 - A compatible MoonLoader scripting host
 - SAMPFUNCS and the host functions used by the script
@@ -75,3 +84,7 @@ The Lua CI check proves that the file parses; it does not prove that host functi
 ## Limitations
 
 The script depends on host-provided functions for model, texture, animation, and participant operations. Compatibility varies by host build and installed extensions. The source repository does not include a standalone runtime or a test harness capable of validating custom assets against every supported client build. Treat custom asset compatibility as something to verify in the target environment.
+
+## License
+
+No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.

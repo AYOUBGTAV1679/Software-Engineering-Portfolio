@@ -1,5 +1,7 @@
 # Lua Code Checker
 
+## Overview
+
 Lua Code Checker is a lightweight static-analysis tool written in Lua. It tokenizes source files and applies a focused set of rules for common reliability and maintainability risks. It is designed to run with a Lua interpreter and does not require a third-party parser package.
 
 ## Checks
@@ -34,11 +36,11 @@ The fixer writes a separate `.fixed.lua` file and leaves the original untouched.
 
 Only a standalone `require("module")` call is currently eligible for automatic wrapping in a protected call. Other findings remain diagnostics. Adding waits to loops, changing process execution, or rewriting file I/O can change application behavior and requires context beyond a local pattern match.
 
-## Implementation
+## Bugs Fixed & Engineering Challenges
 
 The tokenizer is implemented in `tokenizer.lua`. Each check is isolated in its own module under `rules/`, while `autofix.lua` contains the supported transformation. The command-line entry point coordinates file loading, analysis, reporting, and optional fixed-copy output.
 
-The blocking-loop rule was refined against a source corpus to reduce false positives from ordinary bounded iteration. It still cannot reliably reason about every loop whose termination depends on side effects or function calls.
+The blocking-loop rule was refined against a source corpus to reduce false positives from ordinary bounded iteration. Focused regression checks also protect module-root allowlisting and source-line tracking after escaped newlines. The analyzer still cannot reliably reason about every loop whose termination depends on side effects or function calls.
 
 ## Included fixture
 
@@ -66,9 +68,23 @@ tests/
   test_checker_regressions.lua
 ```
 
+## Tech Stack
+
+- Lua 5.2–5.4 or LuaJIT 2.1
+- Lua standard libraries; no third-party parser dependency
+- A custom tokenizer and focused rule modules
+
+## How to Use / Installation
+
+The checker can be run directly with the Lua interpreter as shown above.
+
 ## Requirements and limitations
 
 - Lua 5.2–5.4, or LuaJIT 2.1 (which supports the `goto` syntax used internally)
 - No external Lua dependencies for the checker itself
 
 Because analysis is tokenizer- and pattern-based, dynamic code generation, unusual syntax, complex control flow, and project-specific module resolution may produce missed findings or false positives. Review every diagnostic and every generated fixed copy before using it.
+
+## License
+
+No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.
