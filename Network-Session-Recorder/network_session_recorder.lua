@@ -100,7 +100,7 @@ local _WaitingIteration = 0
 local _CachedInitGame = nil      -- serialized RPC_SCRINITGAME string
 local _CachedConnectId = nil     -- serialized "connect" RPC string
 local _CachedFFLine = nil        -- "FF" .. localPlayerId line
--- A newer INITGAME invalidates delayed handshake work from an older connection.
+-- Tracks which INITGAME generation is already present in the active recording.
 local _InitGameEpoch = RecorderEpoch.new()
 --------------------------------------------------------------
 -- Playback-side state
@@ -456,6 +456,16 @@ Recorder = {
 		_DataQueue = {}
 		_Waiting = false
 		_WaitingIteration = 0
+
+		-- Freeze the cache snapshot synchronously. A handshake callback may
+		-- finish after this function yields; its connect data must then be
+		-- appended to the queue rather than changing this recording's preamble.
+		local startInitGame = _CachedInitGame
+		local startConnectId = _CachedConnectId
+		local startFFLine = _CachedFFLine
+		local startInitGeneration = _InitGameEpoch:current()
+		_InitGameEpoch:mark_included(startInitGeneration)
+
 		_State = Mode.record
 		_RecordStartTick = RecorderClockMs()
 		lua_thread.create(function()
@@ -472,14 +482,14 @@ Recorder = {
 
 				-- Write the cached world-init snapshot FIRST so this recording
 				-- is self-contained no matter when in the session it started.
-				if _CachedInitGame then
-					AddDataToSaveFile(file, PacketTag.RPC .. _CachedInitGame .. "\n")
+				if startInitGame then
+					AddDataToSaveFile(file, PacketTag.RPC .. startInitGame .. "\n")
 				end
-				if _CachedConnectId then
-					AddDataToSaveFile(file, PacketTag.RPC .. _CachedConnectId .. "\n")
+				if startConnectId then
+					AddDataToSaveFile(file, PacketTag.RPC .. startConnectId .. "\n")
 				end
-				if _CachedFFLine then
-					AddDataToSaveFile(file, PacketTag.RPC .. _CachedFFLine .. "\n")
+				if startFFLine then
+					AddDataToSaveFile(file, PacketTag.RPC .. startFFLine .. "\n")
 				end
 
 				-- Embed a snapshot of currently connected participants.
@@ -608,8 +618,9 @@ function onReceiveRpc(id, BitStream)
 	if id == RPC_SCRINITGAME then
 		-- Invalidate any delayed handshake builder from the previous connection.
 		local initGeneration = _InitGameEpoch:begin()
-		local initWasQueued = (_State == Mode.record)
 		_CachedInitGame = SerializeData(id, BitStream, "RPC")
+		_CachedInitGeneration = initGeneration
+		_CachedInitGeneration = initGeneration
 		-- Do not let a new recording combine this INITGAME with the previous
 		-- connection's still-cached player ID and nickname during the 1s delay.
 		_CachedConnectId = nil
@@ -633,13 +644,13 @@ function onReceiveRpc(id, BitStream)
 			raknetDeleteBitStream(ConnectBitstream)
 			_CachedFFLine = "FF" .. localPlayerId
 
-			-- INITGAME was already queued by the normal hook when this event
-			-- arrived during active recording. Otherwise include it now so a
-			-- recording started during the handshake delay gets a complete
-			-- connection preamble without a duplicate INITGAME.
+			-- Include INITGAME only if it was not already written in the
+			-- Start snapshot or queued by the normal receive hook. This also
+			-- covers reconnects received while recording was paused.
 			if _State == Mode.record or _State == Mode.paused then
-				if not initWasQueued then
+				if _InitGameEpoch:needs_init(initGeneration) then
 					AddDataToQueue(_CachedInitGame, "RPC")
+					_InitGameEpoch:mark_included(initGeneration)
 				end
 				AddDataToQueue(_CachedConnectId, "RPC")
 				AddDataToQueue(_CachedFFLine, "RPC")
@@ -648,7 +659,12 @@ function onReceiveRpc(id, BitStream)
 	end
 
 	if _State == Mode.record then
-		AddDataToQueue(SerializeData(id, BitStream, "RPC"), "RPC")
+		if id == RPC_SCRINITGAME then
+			AddDataToQueue(_CachedInitGame, "RPC")
+			_InitGameEpoch:mark_included(_InitGameEpoch:current())
+		else
+			AddDataToQueue(SerializeData(id, BitStream, "RPC"), "RPC")
+		end
 	end
 end
 
