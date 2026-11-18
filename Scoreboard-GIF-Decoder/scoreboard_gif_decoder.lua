@@ -313,18 +313,26 @@ end
 
 local videoPlayback = {
 	path = nil, handle = nil, width = 0, height = 0,
-	nextFrameDue = 0, texture = nil,
+	nextFrameDue = 0, texture = nil, lastPts = nil,
 }
 
+local function isNullVideoHandle(handle)
+	return handle == nil or (ffiOk and ffi and handle == ffi.NULL)
+end
+
+local function validVideoDimensions(width, height)
+	return width and height and width > 0 and height > 0
+		and width * height <= 4000000
+end
+
 -- Decodes the next available frame and updates the background texture.
--- Paced by wall-clock time using a fixed assumed frame rate for now
--- (30fps) since video_get_frame's pts isn't being used to pace yet in
--- this first pass - a real implementation should read pts and schedule
--- off of that instead of a fixed interval).
+-- Presentation-timestamp deltas drive frame pacing when available; 30fps is
+-- used only when timestamps are absent, repeated, or implausibly far apart.
 function advanceVideoPlayback()
-	if not videoLibOk or not videoPlayback.handle then return end
+	if not videoLibOk or isNullVideoHandle(videoPlayback.handle) then return end
 	if videoPlayback.path ~= allset.set.customImgPath then return end
-	if ScoreboardNowSeconds() < videoPlayback.nextFrameDue then return end
+	local now = ScoreboardNowSeconds()
+	if now < videoPlayback.nextFrameDue then return end
 
 	local bufSize = videoPlayback.width * videoPlayback.height * 4
 	local buf = ffi.new("uint8_t[?]", bufSize)
@@ -332,14 +340,47 @@ function advanceVideoPlayback()
 	local result = videoLib.video_get_frame(videoPlayback.handle, buf, pts)
 
 	if result == 0 then
-		-- end of stream - loop back to the start
-		videoLib.video_close(videoPlayback.handle)
-		videoPlayback.handle = videoLib.video_open(videoPlayback.path)
-		videoPlayback.nextFrameDue = ScoreboardNowSeconds() + (1 / 30)
+		-- End of stream: close before reopening and validate the new handle.
+		local finishedHandle = videoPlayback.handle
+		videoPlayback.handle = nil
+		videoLib.video_close(finishedHandle)
+		local reopened = videoLib.video_open(videoPlayback.path)
+		if isNullVideoHandle(reopened) then
+			customImgLoadError = true
+			videoPlayback.nextFrameDue = now + 1
+			if notf then
+				notf.addNotification("Could not restart the video from its beginning.", 6)
+			end
+			return
+		end
+
+		local width = tonumber(videoLib.video_get_width(reopened))
+		local height = tonumber(videoLib.video_get_height(reopened))
+		if not validVideoDimensions(width, height) then
+			videoLib.video_close(reopened)
+			customImgLoadError = true
+			videoPlayback.nextFrameDue = now + 1
+			if notf then
+				notf.addNotification("Video dimensions became invalid when looping.", 6)
+			end
+			return
+		end
+
+		videoPlayback.handle = reopened
+		videoPlayback.width = width
+		videoPlayback.height = height
+		videoPlayback.lastPts = nil
+		videoPlayback.nextFrameDue = now + (1 / 30)
 		return
 	elseif result ~= 1 then
-		return -- decode error, leave last good frame on screen
+		-- Avoid calling a failed native decoder on every rendered frame.
+		videoPlayback.nextFrameDue = now + 0.25
+		return
 	end
+
+	local currentPts = tonumber(pts[0])
+	local frameDelay, hasValidPts = VideoTiming.next_delay(videoPlayback.lastPts, currentPts)
+	videoPlayback.lastPts = hasValidPts and currentPts or nil
 
 	local ok, tex = pcall(imgui.CreateTextureFromRawBytes,
 		ffi.string(buf, bufSize), videoPlayback.width, videoPlayback.height)
@@ -350,7 +391,7 @@ function advanceVideoPlayback()
 		customBackground = tex
 	end
 
-	videoPlayback.nextFrameDue = ScoreboardNowSeconds() + (1 / 30)
+	videoPlayback.nextFrameDue = now + frameDelay
 end
 
 function loadVideoBackground(path)
@@ -362,7 +403,7 @@ function loadVideoBackground(path)
 	end
 
 	local handle = videoLib.video_open(path)
-	if handle == nil or (ffiOk and ffi and handle == ffi.NULL) then
+	if isNullVideoHandle(handle) then
 		customImgLoadError = true
 		if notf then
 			notf.addNotification("Could not open video file: " .. path, 6)
@@ -372,8 +413,7 @@ function loadVideoBackground(path)
 
 	local width = tonumber(videoLib.video_get_width(handle))
 	local height = tonumber(videoLib.video_get_height(handle))
-	if not width or not height or width <= 0 or height <= 0
-			or width * height > 4000000 then
+	if not validVideoDimensions(width, height) then
 		videoLib.video_close(handle)
 		customImgLoadError = true
 		if notf then
@@ -387,6 +427,7 @@ function loadVideoBackground(path)
 	videoPlayback.width = width
 	videoPlayback.height = height
 	videoPlayback.nextFrameDue = 0
+	videoPlayback.lastPts = nil
 	return true
 end
 
@@ -399,6 +440,7 @@ local function gifPathHash(path)
 end
 
 local gifDecoder = require 'gif_decoder_core'
+local VideoTiming = require 'video_timing'
 
 local function gifDecodeFile(path)
 	local f = io.open(path, "rb")
@@ -573,6 +615,7 @@ function loadCustomBackground()
 		videoLib.video_close(videoPlayback.handle)
 		videoPlayback.handle = nil
 	end
+	videoPlayback.lastPts = nil
 	if allset.set.customImgPath and #allset.set.customImgPath > 0 then
 		if doesFileExist(allset.set.customImgPath) then
 			if isGifPath(allset.set.customImgPath) then

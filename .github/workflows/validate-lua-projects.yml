@@ -54,8 +54,8 @@ jobs:
               -type f -name '*.lua' -print0 | sort -z
           )
 
-          if [ "${#lua_files[@]}" -ne 25 ]; then
-            printf 'Expected 25 Lua files, found %s\n' "${#lua_files[@]}"
+          if [ "${#lua_files[@]}" -ne 27 ]; then
+            printf 'Expected 27 Lua files, found %s\n' "${#lua_files[@]}"
             exit 1
           fi
 
@@ -87,6 +87,9 @@ jobs:
 
       - name: Run GIF decoder regression tests
         run: cd Scoreboard-GIF-Decoder && lua5.4 tests/test_gif_decoder.lua
+
+      - name: Run video timestamp helper regression tests
+        run: cd Scoreboard-GIF-Decoder && lua5.4 tests/test_video_timing.lua
 
       - name: Run AI provider error classifier tests
         run: cd Threaded-AI-Chat-API && lua5.4 tests/test_provider_error_classifier.lua
