@@ -221,8 +221,21 @@ local CUSTOM_SKINS = {
 -- have both been identified and tested.
 local CUSTOM_SKIN_SLOT = nil
 
+-- Defense in depth: only accept a non-negative integer that does not
+-- collide with an ID in the built-in skin catalogue. This does NOT prove
+-- that an ID absent from this table is free in the host game database;
+-- the slot must still be verified against the target runtime before use.
+local function HasConfiguredCustomSkinSlot()
+    local slot = CUSTOM_SKIN_SLOT
+    return type(slot) == "number"
+        and slot >= 0
+        and slot < math.huge
+        and slot == math.floor(slot)
+        and SKIN_NAMES[slot] == nil
+end
+
 local function GetRuntimeSkinModelId(skinId)
-    if CUSTOM_SKINS[skinId] and type(CUSTOM_SKIN_SLOT) == "number" then
+    if CUSTOM_SKINS[skinId] and HasConfiguredCustomSkinSlot() then
         return CUSTOM_SKIN_SLOT
     end
     return skinId
@@ -594,8 +607,8 @@ local function ApplySkin(entry)
         local c    = CUSTOM_SKINS[id]
         -- The host API and a safe free model slot are both required. Do not
         -- reuse a built-in ID; 7 is MALE01 in the built-in catalogue.
-        if c.dff and type(CUSTOM_SKIN_SLOT) ~= "number" then
-            Say("{FF4444}Custom DFF loading is disabled: no verified free runtime model slot is configured.")
+        if c.dff and not HasConfiguredCustomSkinSlot() then
+            Say("{FF4444}Custom DFF loading is disabled: configure a verified, unused integer runtime model slot that does not collide with a built-in skin ID.")
             return
         end
         if c.dff and type(loadModelInfo) ~= "function" then
@@ -666,7 +679,7 @@ local function ApplySkin(entry)
             end
         end
 
-        -- Use slot 7 as the skin ID
+        -- Use the verified runtime slot as the model ID.
         id = slot
     end
 
@@ -1086,7 +1099,7 @@ function main()
                     local customEntry = CUSTOM_SKINS[mySkin]
                     local customLoaderMissing = customEntry and customEntry.dff
                         and (type(loadModelInfo) ~= "function"
-                            or type(CUSTOM_SKIN_SLOT) ~= "number")
+                            or not HasConfiguredCustomSkinSlot())
                     if not customLoaderMissing and doesCharExist(PLAYER_PED)
                         and getCharModel(PLAYER_PED) ~= GetRuntimeSkinModelId(mySkin) then
                         ApplySkin({ id = mySkin, name = SKIN_NAMES[mySkin] or ("ID " .. mySkin) })
