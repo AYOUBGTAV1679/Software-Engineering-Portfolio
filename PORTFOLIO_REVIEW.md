@@ -4,10 +4,11 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44258776281](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44258776281), completed successfully on commit `66a0de5c76d1c1226c82fe58f421e0fbeb55bfba`.
+The latest validation run, [GitHub Actions #44334820078](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44334820078), completed successfully on commit `e1fede01b9309eda2381c9f904501fe036bb8ad0`.
 
 The workflow:
 - Parsed all **31 tracked Lua files** across the seven Lua projects with Lua 5.4.
+- Passed a C syntax-only check of `Scoreboard-GIF-Decoder/video_bridge.c` against Ubuntu FFmpeg development headers; this is not a Windows DLL build or runtime playback test.
 - Ran **7 Crash Guard log-writer regression cases** covering open, write, and close failures, including thrown errors and handle cleanup.
 - Ran **7 Crash Guard log-cursor regression cases** covering append-only reads, truncation, and replacement with the same or a greater line count.
 - Checked the Lua Code Checker fixture against its expected result: **3 errors, 3 warnings, 0 info**.
