@@ -63,8 +63,8 @@ local FPS_SAMPLE_WINDOW  = 10     -- how many recent FPS samples to average
 
 local lastWarnTime = {} -- [modelId] = NowSeconds() of last warning, to avoid spam
 local fpsHistory    = {} -- rolling window of recent frame-time-derived FPS samples
--- Game time advances independently of how much CPU time this script consumes.
--- NowSeconds() is process CPU time and is not suitable for frame-interval timing.
+-- Use elapsed game time for frame-interval timing; os.clock() measures process
+-- CPU time and can stop advancing while this script is waiting.
 local function NowSeconds()
     return getGameTimer() / 1000
 end
