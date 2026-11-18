@@ -4,7 +4,7 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44250481449](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44250481449), completed successfully on commit `ce4219eb2c3e76d87203184fc66144df331c0f5b`.
+The latest Lua validation run, [GitHub Actions #44251087148](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44251087148), completed successfully on commit `a008d6034b7d971700152353fc44916462ebecdf`.
 
 The workflow:
 - Parsed all **27 tracked Lua files** across the seven Lua projects with Lua 5.4.
@@ -13,6 +13,7 @@ The workflow:
 - Ran **16 GIF decoder regression cases**, including the malformed-input cases, an independently encoded interlaced multi-pixel fixture that crosses LZW code-width boundaries, and a three-frame transparency/disposal fixture.
 - Ran **7 provider-error classifier cases**, including rate-limit and missing-model responses plus an unrelated invalid-key response.
 - Ran **5 AI prefetch epoch regression cases**, checking that reset or newer-request tokens invalidate older callbacks.
+- Ran **6 video timestamp helper cases**, covering valid variable frame intervals and fallback behavior for repeated, backward, missing, non-finite, and excessive timestamp gaps.
 - Ran **9 Network Session Recorder file-I/O regression cases**, including reported/thrown write failures and cleanup after flush/close errors.
 
 The Aegis Windows packaging workflow previously completed [run #43928542059](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/43928542059) with **206 tests**, a PyInstaller build, and an uploaded `Aegis-Windows-x64.zip` package of 269,855,143 bytes. This is CI build and test evidence; it is not a GUI smoke test on a separate Windows device.
@@ -37,7 +38,7 @@ Player IDs are checked as integers in the supported **0–999** range before hos
 
 ### Network Session Recorder
 
-The recorder prevents overlapping workers during stop/finalization, drains the pending queue before closing, resets queue state at the next start, and sanitizes user-controlled filename parts. A generation token invalidates delayed connection-handshake callbacks when a newer INITGAME arrives; the cached player-ID/nickname handshake is cleared immediately so a new recording cannot combine initialization data with stale connection metadata. The new four-case pure-Lua epoch suite passed in CI alongside the nine file-I/O helper cases. The final quiet interval is now written as a trailing wait record. Checked file operations detect write and periodic-flush failures; the worker uses a protected cleanup path, and finalization attempts close even when flush fails. The recording page's elapsed display now uses the same host timer and millisecond-to-second conversion as the recording overlay and flush scheduler. The pure-Lua file-I/O helper suite passed 9 controlled fake-handle cases. A separate pure-Lua connection-epoch suite checks stale delayed-handshake rejection. This is not a real disk-full test: packet/RPC capture, replay compatibility, sustained traffic, and actual disk failure behavior still need validation in the target host.
+The recorder prevents overlapping workers during stop/finalization, drains the pending queue before closing, resets queue state at the next start, and sanitizes user-controlled filename parts. A generation token invalidates delayed connection-handshake callbacks when a newer INITGAME arrives; the cached player-ID/nickname handshake is cleared immediately so a new recording cannot combine initialization data with stale connection metadata. The new four-case pure-Lua epoch suite passed in CI alongside the nine file-I/O helper cases. The final quiet interval is now written as a trailing wait record. Checked file operations detect write and periodic-flush failures; the worker uses a protected cleanup path, and finalization attempts close even when flush fails. The recording page's elapsed display now uses the same host timer and millisecond-to-second conversion as the recording overlay and flush scheduler. The pure-Lua file-I/O helper suite passed 9 controlled fake-handle cases. This is not a real disk-full test: packet/RPC capture, replay compatibility, sustained traffic, and actual disk failure behavior still need validation in the target host.
 
 ### Scoreboard GIF Decoder
 
