@@ -15,6 +15,7 @@ The workflow:
 - Ran **7 AI asynchronous epoch regression cases**, checking that reset or newer-request tokens invalidate older interactive and prefetch callbacks independently.
 - Ran **6 video timestamp helper cases**, covering valid variable frame intervals and fallback behavior for repeated, backward, missing, non-finite, and excessive timestamp gaps.
 - Ran **9 Network Session Recorder file-I/O regression cases**, including reported/thrown write failures and cleanup after flush/close errors.
+- Ran **8 Network Session Recorder handshake epoch cases**, covering stale callback rejection and include-once handling across a new Start snapshot.
 - Ran **8 Network Session Recorder handshake epoch cases**, including Start-snapshot handling and include-once behavior when delayed callbacks finish.
 
 The Aegis Windows packaging workflow previously completed [run #43928542059](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/43928542059) with **206 tests**, a PyInstaller build, and an uploaded `Aegis-Windows-x64.zip` package of 269,855,143 bytes. This is CI build and test evidence; it is not a GUI smoke test on a separate Windows device.
