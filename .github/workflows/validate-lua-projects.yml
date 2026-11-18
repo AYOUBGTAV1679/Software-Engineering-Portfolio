@@ -54,8 +54,8 @@ jobs:
               -type f -name '*.lua' -print0 | sort -z
           )
 
-          if [ "${#lua_files[@]}" -ne 23 ]; then
-            printf 'Expected 23 Lua files, found %s\n' "${#lua_files[@]}"
+          if [ "${#lua_files[@]}" -ne 25 ]; then
+            printf 'Expected 25 Lua files, found %s\n' "${#lua_files[@]}"
             exit 1
           fi
 
@@ -96,3 +96,6 @@ jobs:
 
       - name: Run Network Session Recorder file-I/O tests
         run: cd Network-Session-Recorder && lua5.4 tests/test_recorder_file_io.lua
+
+      - name: Run Network Session Recorder handshake epoch tests
+        run: cd Network-Session-Recorder && lua5.4 tests/test_recorder_epoch.lua

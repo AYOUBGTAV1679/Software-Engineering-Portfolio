@@ -22,6 +22,7 @@ script_author("kuzheren (maynkraftpro2010) + extended by Sam Wilson")
 --------------------------------------------------------------
 require("sampfuncs")
 local recorderFileIO = require("recorder_file_io")
+local RecorderEpoch = require("recorder_epoch")
 local imgui = require("imgui")
 local encoding = require("encoding")
 encoding.default = "CP1251"
@@ -99,6 +100,8 @@ local _WaitingIteration = 0
 local _CachedInitGame = nil      -- serialized RPC_SCRINITGAME string
 local _CachedConnectId = nil     -- serialized "connect" RPC string
 local _CachedFFLine = nil        -- "FF" .. localPlayerId line
+-- A newer INITGAME invalidates delayed handshake work from an older connection.
+local _InitGameEpoch = RecorderEpoch.new()
 --------------------------------------------------------------
 -- Playback-side state
 local _DataPlaying = {}
@@ -603,23 +606,41 @@ function onReceiveRpc(id, BitStream)
 	-- Always cache INITGAME / connect handshake in memory (never written
 	-- to disk unless a recording is actively running).
 	if id == RPC_SCRINITGAME then
+		-- Invalidate any delayed handshake builder from the previous connection.
+		local initGeneration = _InitGameEpoch:begin()
+		local initWasQueued = (_State == Mode.record)
 		_CachedInitGame = SerializeData(id, BitStream, "RPC")
+		-- Do not let a new recording combine this INITGAME with the previous
+		-- connection's still-cached player ID and nickname during the 1s delay.
+		_CachedConnectId = nil
+		_CachedFFLine = nil
+
 		lua_thread.create(function()
 			wait(1000)
-			local nickname = sampGetPlayerNickname(sampGetLocalPlayerId())
+			if not _InitGameEpoch:is_current(initGeneration) then return end
+
+			local localPlayerId = sampGetLocalPlayerId()
+			local nickname = sampGetPlayerNickname(localPlayerId)
+			if type(nickname) ~= "string" or nickname == "" then return end
+
 			local ConnectBitstream = raknetNewBitStream()
-			raknetBitStreamWriteInt16(ConnectBitstream, sampGetLocalPlayerId())
+			raknetBitStreamWriteInt16(ConnectBitstream, localPlayerId)
 			raknetBitStreamWriteInt32(ConnectBitstream, 0)
 			raknetBitStreamWriteInt8(ConnectBitstream, 0)
 			raknetBitStreamWriteInt8(ConnectBitstream, #nickname)
 			raknetBitStreamWriteString(ConnectBitstream, nickname)
 			_CachedConnectId = SerializeData(137, ConnectBitstream, "RPC")
 			raknetDeleteBitStream(ConnectBitstream)
-			_CachedFFLine = "FF" .. sampGetLocalPlayerId()
+			_CachedFFLine = "FF" .. localPlayerId
 
-			-- If a recording is already running, feed it the fresh cache too.
+			-- INITGAME was already queued by the normal hook when this event
+			-- arrived during active recording. Otherwise include it now so a
+			-- recording started during the handshake delay gets a complete
+			-- connection preamble without a duplicate INITGAME.
 			if _State == Mode.record or _State == Mode.paused then
-				AddDataToQueue(_CachedInitGame, "RPC")
+				if not initWasQueued then
+					AddDataToQueue(_CachedInitGame, "RPC")
+				end
 				AddDataToQueue(_CachedConnectId, "RPC")
 				AddDataToQueue(_CachedFFLine, "RPC")
 			end

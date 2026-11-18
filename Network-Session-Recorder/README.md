@@ -4,7 +4,7 @@ Network Session Recorder captures selected client-observed RPC and packet data i
 
 ## Recording workflow
 
-Recording is started explicitly and can be paused and stopped. The script writes data incrementally and flushes its output on a five-second elapsed-time schedule. The elapsed display and flush cadence use the host game timer, with a seconds-resolution system-clock fallback; they do not use Lua's process-CPU clock. Stopping moves the recorder into a finalization phase: the pending event queue is drained and the file is closed before another recording can start. This prevents two recorder workers from consuming the same shared queue when a new recording is started immediately after Stop. Before a new recording begins, it caches selected initialization and connection data; it also embeds a snapshot of currently connected participants' display metadata so the recording is less dependent on state that may no longer be available later.
+Recording is started explicitly and can be paused and stopped. The script writes data incrementally and flushes its output on a five-second elapsed-time schedule. The elapsed display and flush cadence use the host game timer, with a seconds-resolution system-clock fallback; they do not use Lua's process-CPU clock. Stopping moves the recorder into a finalization phase: the pending event queue is drained and the file is closed before another recording can start. This prevents two recorder workers from consuming the same shared queue when a new recording is started immediately after Stop. Before a new recording begins, it caches selected initialization and connection data; it also embeds a snapshot of currently connected participants' display metadata so the recording is less dependent on state that may no longer be available later. A new INITGAME clears the previous connection handshake immediately, and a generation token prevents a delayed callback from an older connection from repopulating the cache. If recording begins during the one-second handshake delay, the current initialization event and its connection data are added to that recording without duplicating an INITGAME that the normal hook already queued.
 
 The hook layer handles selected incoming RPCs, incoming packets, and outgoing packet types. Data is serialized into the project's own recording representation and stored under the configured recording directory.
 
@@ -34,6 +34,7 @@ Playback can only reproduce information that was captured, serialized, and suppo
 
 ## Engineering work
 
+- Delayed connection-handshake callbacks are generation-checked, and a new INITGAME clears stale player-ID/nickname cache values before the delayed handshake is rebuilt.
 - Recording writes, periodic flushes, and finalization now check file-operation results. A write/flush failure exits the worker through a protected path, and close is still attempted when the final flush fails.
 - The recording page's elapsed-time display now uses the same host timer and millisecond-to-second conversion as the recording overlay and flush scheduler.
 - Seeking is committed when the user finishes the slider interaction instead of running for every intermediate drag value.
@@ -47,7 +48,7 @@ Playback can only reproduce information that was captured, serialized, and suppo
 - SAMPFUNCS and the packet/RPC hook functions used by the script
 - The host's ImGui integration
 
-Copy `network_session_recorder.lua` into the host's MoonLoader scripts directory and `recorder_file_io.lua` into `moonloader/lib`. The script creates its working directory for recordings and settings when needed. Recording filename prefixes and nicknames are reduced to safe alphanumeric, underscore, and hyphen components, and a numeric suffix is added when a timestamp-based name already exists so a new session is not appended to an older recording.
+Copy `network_session_recorder.lua` into the host's MoonLoader scripts directory and `recorder_file_io.lua` and `recorder_epoch.lua` into `moonloader/lib`. The script creates its working directory for recordings and settings when needed. Recording filename prefixes and nicknames are reduced to safe alphanumeric, underscore, and hyphen components, and a numeric suffix is added when a timestamp-based name already exists so a new session is not appended to an older recording.
 
 ## Data and limitations
 
@@ -62,4 +63,10 @@ The pure-Lua file-operation module has a regression suite that checks successful
 lua5.4 tests/test_recorder_file_io.lua
 ```
 
-These tests exercise the file-operation helper with controlled fake handles. They do not replace a disk-full or sustained-recording test in the target host.
+These tests exercise the file-operation helper with controlled fake handles. Delayed handshake freshness is tested separately with:
+
+```sh
+lua5.4 tests/test_recorder_epoch.lua
+```
+
+The epoch tests cover connection replacement while a delayed callback is pending; they do not simulate MoonLoader networking or replace a sustained-recording test in the target host.
