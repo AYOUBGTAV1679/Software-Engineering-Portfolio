@@ -17,7 +17,7 @@ The workflow:
 - Ran **9 Network Session Recorder file-I/O regression cases**, including reported/thrown write failures and cleanup after flush/close errors.
 - Ran **8 Network Session Recorder handshake epoch cases**, covering stale callback rejection and include-once handling across a new Start snapshot.
 
-The Aegis Windows packaging workflow previously completed [run #43928542059](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/43928542059) with **206 tests**, a PyInstaller build, and an uploaded `Aegis-Windows-x64.zip` package of 269,855,143 bytes. This is CI build and test evidence; it is not a GUI smoke test on a separate Windows device.
+The Aegis Windows packaging workflow completed [run #44254113483](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44254113483) with **206 passing tests**, a successful PyInstaller build, and an uploaded `Aegis-Windows-x64.zip` artifact of 269,856,329 bytes. The artifact is listed to expire on **16 February 2027**. This is CI build and test evidence; it is not a GUI smoke test on a separate Windows device.
 
 ## Project-specific engineering notes
 
