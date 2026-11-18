@@ -4,12 +4,12 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44255492325](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44255492325), completed successfully on commit `232569d8dec3d18c3405c6685590c34df0d6cda3`.
+The latest Lua validation run, [GitHub Actions #44255672661](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44255672661), completed successfully on commit `4ffaf0f2f84e7994569c05df3bb8f4dc18807066`.
 
 The workflow:
 - Parsed all **27 tracked Lua files** across the seven Lua projects with Lua 5.4.
 - Checked the Lua Code Checker fixture against its expected result: **3 errors, 3 warnings, 0 info**.
-- Ran Lua Code Checker regression tests for module allowlisting, escaped-newline line tracking, `io.popen()` call boundaries, nested `do` loop scopes, and conservative autofix behavior.
+- Ran **8 Lua Code Checker regression cases** for module allowlisting, escaped-newline line tracking, `io.popen()` call boundaries, nested `do` loop scopes, and conservative autofix behavior.
 - Ran **16 GIF decoder regression cases**, including the malformed-input cases, an independently encoded interlaced multi-pixel fixture that crosses LZW code-width boundaries, and a three-frame transparency/disposal fixture.
 - Ran **7 provider-error classifier cases**, including rate-limit and missing-model responses plus an unrelated invalid-key response.
 - Ran **9 AI asynchronous epoch regression cases**, checking token freshness for interactive responses, prefetch requests, and delayed auto-open tasks.
