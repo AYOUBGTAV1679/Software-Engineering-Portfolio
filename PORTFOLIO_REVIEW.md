@@ -4,7 +4,7 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44256195733](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44256195733), completed successfully on commit `6a4c14d72d2332ab4cd7533b48c20b5e992810c3`.
+The latest Lua validation run, [GitHub Actions #44256629759](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44256629759), completed successfully on commit `c0e1d74d7adf5e43603668edf37b487a1f28ef92`.
 
 The workflow:
 - Parsed all **27 tracked Lua files** across the seven Lua projects with Lua 5.4.
