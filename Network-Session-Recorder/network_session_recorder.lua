@@ -619,8 +619,6 @@ function onReceiveRpc(id, BitStream)
 		-- Invalidate any delayed handshake builder from the previous connection.
 		local initGeneration = _InitGameEpoch:begin()
 		_CachedInitGame = SerializeData(id, BitStream, "RPC")
-		_CachedInitGeneration = initGeneration
-		_CachedInitGeneration = initGeneration
 		-- Do not let a new recording combine this INITGAME with the previous
 		-- connection's still-cached player ID and nickname during the 1s delay.
 		_CachedConnectId = nil
