@@ -7,7 +7,8 @@ This document records the current engineering state of the eight projects. It di
 The latest Lua validation run, [GitHub Actions #44256629759](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44256629759), completed successfully on commit `c0e1d74d7adf5e43603668edf37b487a1f28ef92`.
 
 The workflow:
-- Parsed all **27 tracked Lua files** across the seven Lua projects with Lua 5.4.
+- Parsed all **29 tracked Lua files** across the seven Lua projects with Lua 5.4.
+- Ran **8 Crash Guard log-writer regression cases** covering open, write, and close failures, including thrown errors and handle cleanup.
 - Checked the Lua Code Checker fixture against its expected result: **3 errors, 3 warnings, 0 info**.
 - Ran **8 Lua Code Checker regression cases** for module allowlisting, escaped-newline line tracking, `io.popen()` call boundaries, nested `do` loop scopes, and conservative autofix behavior.
 - Ran **17 GIF decoder regression cases**, including the malformed-input cases, an independently encoded interlaced multi-pixel fixture that crosses LZW code-width boundaries, and a three-frame transparency/disposal fixture.
@@ -27,7 +28,7 @@ The source now uses the documented `loadTextureDictionary` and animation request
 
 ### Crash Guard
 
-The script uses the host game timer for elapsed-time measurements and scans vehicles around the local character through `findAllRandomVehiclesInSphere`. The documented scan radius is **250 units**, with duplicate handling and a per-scan ceiling. The scan is not a count of every vehicle in the full game world. Iterator behavior and returned handles still require a MoonLoader runtime test.
+The script uses the host game timer for elapsed-time measurements and scans vehicles around the local character through `findAllRandomVehiclesInSphere`. Warning-log appends now use a small helper that protects open, write, and close separately; even when a write throws or returns an I/O error, the file handle is still closed and the failure does not escape into monitoring. The documented scan radius is **250 units**, with duplicate handling and a per-scan ceiling. The scan is not a count of every vehicle in the full game world. Iterator behavior and returned handles still require a MoonLoader runtime test.
 
 ### Lua Code Checker
 

@@ -53,6 +53,7 @@ script_version("2.0")
 --------------------------------------------------------------
 
 local imgui = require("imgui")
+local SafeLogWriter = require("crash_guard_log_writer")
 
 local WARN_THRESHOLD   = 5      -- same-model vehicle count that triggers a warning
 local CHECK_INTERVAL    = 5000   -- ms between vehicle-count checks
@@ -93,17 +94,12 @@ local thresholdBox  = imgui.ImInt(WARN_THRESHOLD)
 local LOG_FILE = getGameDirectory() .. "/moonloader/CrashGuard_log.txt"
 
 --------------------------------------------------------------
--- Persistent warning log. Every write is guarded - if the file can't
--- be opened for any reason, logging is skipped silently rather than
--- erroring, since a logging failure should never be able to take
--- down the actual monitoring this tool exists to do.
+-- Persistent warning log. File opening, writing, and closing are protected
+-- separately; a full disk or an unexpected I/O error must not stop monitoring.
 --------------------------------------------------------------
 local function LogWarning(line)
-    local f = io.open(LOG_FILE, "a")
-    if f then
-        f:write(os.date("%Y-%m-%d %H:%M:%S") .. "  " .. line .. "\n")
-        f:close()
-    end
+    local record = os.date("%Y-%m-%d %H:%M:%S") .. "  " .. line .. "\n"
+    return SafeLogWriter.append(io.open, LOG_FILE, record)
 end
 
 local function ReadRecentLog(maxLines)
