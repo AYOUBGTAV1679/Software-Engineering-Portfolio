@@ -156,6 +156,13 @@ expectFixture(
 	{0.1, 0.2, 0.3}
 )
 
+expectFixture(
+	"independently encoded 128x128 interlaced GIF reaching 12-bit LZW codes",
+	readFixture("tests/fixtures/lzw_growth_12bit_interlaced.gif"),
+	128, 128,
+	{58956636}
+)
+
 
 local badBackgroundHeader = gifHeader("GIF89a", true)
 badBackgroundHeader = badBackgroundHeader:sub(1, 11) .. string.char(255) .. badBackgroundHeader:sub(13)
