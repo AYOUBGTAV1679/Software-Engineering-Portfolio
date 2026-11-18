@@ -15,7 +15,7 @@ Lua Code Checker is a lightweight static-analysis tool written in Lua. It tokeni
 
 These rules are deliberately narrow. The checker is a pattern-based analyzer, not a complete Lua parser, proof system, or guarantee that a program is safe.
 
-## Usage
+## How to Use / Installation
 
 Analyze one or more files:
 
@@ -74,9 +74,6 @@ tests/
 - Lua standard libraries; no third-party parser dependency
 - A custom tokenizer and focused rule modules
 
-## How to Use / Installation
-
-The checker can be run directly with the Lua interpreter as shown above.
 
 ## Requirements and limitations
 
