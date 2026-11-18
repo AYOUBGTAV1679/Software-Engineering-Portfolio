@@ -4,7 +4,7 @@ This document records the current engineering state of the eight projects. It di
 
 ## Repository-wide verification
 
-The latest Lua validation run, [GitHub Actions #44252201469](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44252201469), completed successfully on commit `5c4d53911debb97e845276fdabb20d24ff855829`.
+The latest Lua validation run, [GitHub Actions #44253394687](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/44253394687), completed successfully on commit `11aaa16ac30d4283d38b0399dcfd58e694979922`.
 
 The workflow:
 - Parsed all **27 tracked Lua files** across the seven Lua projects with Lua 5.4.
@@ -15,6 +15,7 @@ The workflow:
 - Ran **7 AI asynchronous epoch regression cases**, checking that reset or newer-request tokens invalidate older interactive and prefetch callbacks independently.
 - Ran **6 video timestamp helper cases**, covering valid variable frame intervals and fallback behavior for repeated, backward, missing, non-finite, and excessive timestamp gaps.
 - Ran **9 Network Session Recorder file-I/O regression cases**, including reported/thrown write failures and cleanup after flush/close errors.
+- Ran **8 Network Session Recorder handshake epoch cases**, including Start-snapshot handling and include-once behavior when delayed callbacks finish.
 
 The Aegis Windows packaging workflow previously completed [run #43928542059](https://github.com/AYOUBGTAV1679/Software-Engineering-Portfolio/actions/runs/43928542059) with **206 tests**, a PyInstaller build, and an uploaded `Aegis-Windows-x64.zip` package of 269,855,143 bytes. This is CI build and test evidence; it is not a GUI smoke test on a separate Windows device.
 
