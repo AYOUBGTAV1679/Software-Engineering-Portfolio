@@ -85,6 +85,9 @@ The Lua CI check proves that the file parses; it does not prove that host functi
 
 The script depends on host-provided functions for model, texture, animation, and participant operations. Compatibility varies by host build and installed extensions. The source repository does not include a standalone runtime or a test harness capable of validating custom assets against every supported client build. Treat custom asset compatibility as something to verify in the target environment.
 
+
+**Author:** Salah aldeen Wurdku
+
 ## License
 
 No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.
