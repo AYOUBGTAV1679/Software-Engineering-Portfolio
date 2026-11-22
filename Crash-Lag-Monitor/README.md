@@ -54,6 +54,9 @@ The accompanying `.ini` file is a separate host-configuration artifact, not part
 
 Crash Guard reports selected runtime signals. It cannot guarantee that an application will remain stable, detect every failure mode, diagnose every root cause, or change engine-level resource limits. Log matching is only as complete as the patterns recognized by the script and the data written by the host.
 
+
+**Author:** Salah aldeen Wurdku
+
 ## License
 
 No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.
