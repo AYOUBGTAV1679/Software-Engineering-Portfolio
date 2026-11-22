@@ -8,10 +8,10 @@ This repository is intended as a general technical portfolio. It is not tailored
 
 | Project | Area | Repository status |
 |---|---|---|
-| [3D-Model-Loader](3D-Model-Loader/README.md) | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls | Source published; custom model-slot validation and host-timer handling pass Lua 5.4 CI; target-host validation pending |
+| [3D-Model-Loader](3D-Model-Loader/README.md) | Zeno Skin Changer — local skin discovery, selection, persistence, and walk-style controls | Source published; Lua 5.4 syntax check passed; custom-slot and timer behavior still need in-host validation |
 | [Crash-Lag-Monitor](Crash-Lag-Monitor/README.md) | Crash Guard — performance monitoring and log diagnostics | Source published; protected warning-log I/O is CI-tested; log-rotation cursor checks added for CI; runtime validation pending |
 | [Lua-Code-Checker](Lua-Code-Checker/README.md) | Static checks and conservative automatic fixes for Lua | Source published; Lua 5.4 CI and focused tokenizer/rule/autofix regressions passed; runtime validation pending |
-| [Coordinate-Lookup-Tool](Coordinate-Lookup-Tool/README.md) | Position lookup and handling of protected multi-value returns | Source published; Lua 5.4 CI passed; runtime validation pending |
+| [Coordinate-Lookup-Tool](Coordinate-Lookup-Tool/README.md) | Position lookup and handling of protected multi-value returns | Source published; Lua 5.4 syntax check passed; host lookup and replay behavior still need validation |
 | [Network-Session-Recorder](Network-Session-Recorder/README.md) | Session capture, binary storage, and playback | Source published; Lua 5.4 CI passed; runtime validation pending |
 | [Scoreboard-GIF-Decoder](Scoreboard-GIF-Decoder/README.md) | Scoreboard interface and GIF/LZW decoding | Source, isolated parser, malformed-stream tests, interlaced fixtures through 12-bit LZW, and multi-frame animation fixture published; host runtime and broad GIF corpus pending |
 | [Threaded-AI-Chat-API](Threaded-AI-Chat-API/README.md) | Non-blocking AI API requests from a cooperative scripting host | Source, provider-error tests, and stale interactive/prefetch/auto-open callback tests published; live host/provider validation pending |
