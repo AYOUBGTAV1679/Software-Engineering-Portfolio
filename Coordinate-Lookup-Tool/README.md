@@ -53,6 +53,9 @@ Copy `coordinate_lookup_tool.lua` into the host's MoonLoader scripts directory a
 
 This is an environment-specific navigation utility, not a general GPS or mapping library. The cache is keyed by player ID; when an active slot is observed with a different nickname, its previous cached entry is discarded to avoid carrying coordinates across a visible slot reassignment. Cached positions may still become stale, disappear when the script session ends, or be unavailable for participants that were never observed. A successful coordinate lookup also does not guarantee that moving to the coordinate is safe or valid in every host state.
 
+
+**Author:** Salah aldeen Wurdku
+
 ## License
 
 No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.
