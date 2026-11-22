@@ -80,6 +80,9 @@ lua5.4 tests/test_recorder_epoch.lua
 
 The epoch tests cover connection replacement while a delayed callback is pending; they do not simulate MoonLoader networking or replace a sustained-recording test in the target host.
 
+
+**Author:** Salah aldeen Wurdku
+
 ## License
 
 No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.
