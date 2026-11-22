@@ -107,6 +107,9 @@ lua5.4 tests/test_prefetch_epoch.lua
 
 The nine-case helper suite checks callback freshness bookkeeping, including independent tokens for interactive responses and prefetch work plus delayed auto-open cancellation. It does not simulate the MoonLoader event loop or prove live HTTP timing behavior.
 
+
+**Author:** Salah aldeen Wurdku
+
 ## License
 
 No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.
