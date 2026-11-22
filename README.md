@@ -46,3 +46,5 @@ Each project README should make it possible to understand the work without relyi
 The portfolio avoids unsupported performance claims, inflated feature descriptions, and claims of production readiness without evidence. Test results must identify the test set and environment; benchmark results must not be presented as universal real-world accuracy. Optional integrations must be identified as optional, and anything that has not been tested against a live service should be described accordingly.
 
 The projects target different runtimes and environments. MoonLoader-based scripts require a compatible host runtime and supporting components. Aegis and Lua Code Checker are separate tools with their own runtime requirements.
+
+**Author:** Salah aldeen Wurdku
