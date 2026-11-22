@@ -73,6 +73,9 @@ The checked-in fixtures live in `tests/fixtures/`. The 32×32 interlaced LZW sam
 
 The 128×128 fixture extends coverage through the 9-to-10, 10-to-11, and 11-to-12-bit transitions. This is still a focused regression set rather than a full third-party GIF conformance corpus.
 
+
+**Author:** Salah aldeen Wurdku
+
 ## License
 
 No project-specific license file is currently included for this project. Review the source and any upstream notices before redistributing or reusing it; publication in this portfolio does not by itself grant additional redistribution rights.
